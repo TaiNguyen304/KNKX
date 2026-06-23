@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Khắc Nhập Khắc Xuất - Controller</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .main-title {
+            color: #39ff14;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #39ff14;
+        }
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #444;
+        }
+        .main-prize {
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            width: 450px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000000;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .symbols-row {
+            display: flex;
+            width: 450px;
+            gap: 4px;
+        }
+        .symbol-box {
+            background-image: url('SymbolStrap.png');
+            background-size: 100% 100%;
+            flex: 1;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+            cursor: pointer;
+        }
+        .symbol-box.selected { background-image: url('SymbolChooseStrap.png') !important; }
+        .symbol-box.closed { background-image: url('SymbolCloseStrap.png') !important; color: transparent !important; pointer-events: none;}
+        
+        .money-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 220px);
+            grid-gap: 6px;
+            grid-template-rows: repeat(6, 45px);
+        }
+        .money-box {
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000000;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .money-box.selected { background-image: url('ChooseStrap.png') !important; }
+        .money-box.closed { background-image: url('CloseStrap.png') !important; color: transparent !important; pointer-events: none;}
+
+        .controls-panel {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 500px;
+            box-sizing: border-box;
+        }
+        .controls-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            height: 36px; padding: 0 10px; border: 1px solid #fff; border-radius: 4px;
+            font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; background-color: #333;
+        }
+        .btn:hover { background-color: orange !important; color: white !important; }
+        .btn-round-toggle { background-color: blue !important; }
+        .btn-round-toggle.active-round { background-color: #800080 !important; }
+        .btn-view { background-color: green; }
+        .btn-close { background-color: red; }
+        .btn-excel { background-color: purple; }
+        .btn-result, .btn-action-yellow { background-color: yellow !important; color: #000 !important; }
+
+        .input-popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center;
+        }
+        .input-popup-box { background: #fff; color: #000; padding: 20px; border-radius: 8px; width: 300px; }
+        .input-popup-textbox { width: 100%; height: 35px; margin: 10px 0; text-transform: uppercase; box-sizing: border-box;}
+        .popup-actions { display: flex; justify-content: space-between; margin-top: 15px;}
+    </style>
+</head>
+<body>
+
+    <div class="main-title">BÀN ĐIỀU KHIỂN HOST (CONTROLLER)</div>
+
+    <div class="game-board" id="gameBoard">
+        <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+        <div class="symbols-row" id="symbolsRow"></div>
+        <div style="margin: 10px 0; font-weight: bold; color: #ff00cc;" id="currentTopicDisplay">Chủ đề: TỪ CHỦ ĐỀ 1</div>
+        <div class="money-grid" id="moneyGrid"></div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="controls-row">
+            <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
+            <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
+        </div>
+        <div class="controls-row">
+            <button class="btn btn-view" onclick="changeScreenClasses(['hide-money', 'show-topic'])">HIỆN CHỦ ĐỀ</button>
+            <button class="btn btn-view" onclick="changeScreenClasses(['hide-money', 'show-topic', 'show-choices'])">HIỆN A, B, C</button>
+            <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
+            <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
+            <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcel(event)">
+        </div>
+        <div class="controls-row">
+            <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
+            <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
+            <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
+        </div>
+        <div class="controls-row" id="r1ActionRow">
+            <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
+            <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
+            <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
+        </div>
+        <div class="controls-row" id="r2ActionRow" style="display:none;">
+            <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
+            <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
+            <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
+        </div>
+        <div class="controls-row">
+            <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
+            <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
+            <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
+        </div>
+    </div>
+
+    <div class="input-popup-overlay" id="inputPopupOverlay">
+        <div class="input-popup-box">
+            <h3 id="popupTitle" style="margin:0;">Nhập Đáp Án</h3>
+            <input type="text" id="popupCandidateAns" class="input-popup-textbox" placeholder="Nhập đáp án thí sinh...">
+            <div>
+                <label><input type="checkbox" id="chkCorrect" checked onchange="document.getElementById('chkWrong').checked=!this.checked"> ĐÚNG</label>
+                <label style="margin-left:20px;"><input type="checkbox" id="chkWrong" onchange="document.getElementById('chkCorrect').checked=!this.checked"> SAI</label>
+            </div>
+            <div class="popup-actions">
+                <button class="btn" style="background:green;" onclick="savePopupData()">LƯU</button>
+                <button class="btn" style="background:red;" onclick="document.getElementById('inputPopupOverlay').style.display='none'">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let state = {};
+        let round1TopicsData = [];
+        let round2TopicsData = [];
+        let currentRoundIndexR1 = 0;
+        let currentRoundIndexR2 = 0;
+
+        socket.on('sync-full-state', (serverState) => {
+            state = serverState;
+            renderMoneyGrid();
+            renderSymbolsRow();
+            updateUI();
+        });
+
+        function sendUpdate() {
+            socket.emit('update-game-state', state);
+        }
+
+        function updateUI() {
+            document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+            document.getElementById('btnRound1').classList.toggle('active-round', state.currentActiveRound === 1);
+            document.getElementById('btnRound2').classList.toggle('active-round', state.currentActiveRound === 2);
+            document.getElementById('currentTopicDisplay').innerText = "Chủ đề: " + state.currentRoundData.topic;
+            
+            document.getElementById('r1ActionRow').style.display = state.currentActiveRound === 1 ? 'flex' : 'none';
+            document.getElementById('r2ActionRow').style.display = state.currentActiveRound === 2 ? 'flex' : 'none';
+        }
+
+        function renderMoneyGrid() {
+            const grid = document.getElementById('moneyGrid');
+            grid.innerHTML = '';
+            const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
+            
+            layout.forEach((val, idx) => {
+                const box = document.createElement('div');
+                box.className = 'money-box';
+                box.innerText = val;
+                if (state.moneyGridState[idx] === 'selected') box.classList.add('selected');
+                if (state.moneyGridState[idx] === 'closed') box.classList.add('closed');
+                
+                box.onclick = () => {
+                    if (box.classList.contains('closed')) return;
+                    state.moneyGridState = {}; 
+                    state.moneyGridState[idx] = 'selected';
+                    sendUpdate();
+                };
+                grid.appendChild(box);
+            });
+        }
+
+        function renderSymbolsRow() {
+            const container = document.getElementById('symbolsRow');
+            container.innerHTML = '';
+            const signs = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['*', '*', '*', '*', '/', '/', '/', '/'];
+            const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
+
+            signs.forEach((sign, idx) => {
+                const box = document.createElement('div');
+                box.className = 'symbol-box';
+                box.innerHTML = `<span>${displaySigns[idx]}</span>`;
+                if (state.symbolBoxesState[idx] === 'selected') box.classList.add('selected');
+                if (state.symbolBoxesState[idx] === 'closed') box.classList.add('closed');
+
+                box.onclick = () => {
+                    if (box.classList.contains('closed')) return;
+                    state.symbolBoxesState = {};
+                    state.symbolBoxesState[idx] = 'selected';
+                    sendUpdate();
+                };
+                container.appendChild(box);
+            });
+        }
+
+        function switchRound(roundNum) {
+            state.currentActiveRound = roundNum;
+            state.moneyGridState = {};
+            state.symbolBoxesState = {};
+            state.displayClasses = [];
+            state.activeQuestion = null;
+            loadRoundData();
+            sendUpdate();
+        }
+
+        function loadRoundData() {
+            let targetList = (state.currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
+            if (targetList.length === 0 || targetIdx >= targetList.length) return;
+
+            const round = targetList[targetIdx];
+            state.currentRoundData = {
+                topic: round.topic.toUpperCase(),
+                A: round.A, B: round.B, C: round.C
+            };
+            state.usedChoices = { A: false, B: false, C: false };
+            state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
+            state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
+        }
+
+        function changeScreenClasses(classesArray) {
+            let targetList = (state.currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
+            
+            if (state.activeQuestion === null && classesArray.includes('show-topic') && !classesArray.includes('show-choices')) {
+                if (targetList.length > 0) {
+                    if (currentRoundIndexR1 > 0 || currentRoundIndexR2 > 0) {
+                        if (state.currentActiveRound === 1) currentRoundIndexR1++; else currentRoundIndexR2++;
+                    }
+                    loadRoundData();
+                }
+            }
+            state.displayClasses = classesArray;
+            sendUpdate();
+        }
+
+        function backToMoneyGrid() {
+            state.displayClasses = [];
+            state.activeQuestion = null;
+            sendUpdate();
+        }
+
+        function openQuestion(choice) {
+            if (state.usedChoices[choice]) return;
+            state.activeQuestion = choice;
+            state.displayClasses = ['hide-money', 'show-topic', 'show-choices', 'show-question'];
+            state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
+            sendUpdate();
+        }
+
+        function selectAnswerAdmin(isTrue) {
+            if (state.currentActiveRound === 2 || !state.activeQuestion) return;
+            state.round1CtrlState.selectedStatusAdmin = isTrue;
+            if (isTrue) {
+                state.round1CtrlState.trueBtnClass = "ans-btn chosen";
+                state.round1CtrlState.falseBtnClass = "ans-btn hidden-ans";
+            } else {
+                state.round1CtrlState.falseBtnClass = "ans-btn chosen";
+                state.round1CtrlState.trueBtnClass = "ans-btn hidden-ans";
+            }
+            sendUpdate();
+        }
+
+        function revealResultRound1() {
+            if (!state.activeQuestion || state.round1CtrlState.selectedStatusAdmin === null) return;
+            const correctAns = state.currentRoundData[state.activeQuestion].correct;
+            if (state.round1CtrlState.selectedStatusAdmin === true) {
+                state.round1CtrlState.trueBtnClass = correctAns ? "ans-btn correct-final" : "ans-btn wrong-final";
+            } else {
+                state.round1CtrlState.falseBtnClass = !correctAns ? "ans-btn correct-final" : "ans-btn wrong-final";
+            }
+            sendUpdate();
+        }
+
+        function openInputPopup() {
+            if (!state.activeQuestion) return;
+            document.getElementById('popupTitle').innerText = `Nhập câu ${state.activeQuestion}`;
+            document.getElementById('inputPopupOverlay').style.display = 'flex';
+        }
+
+        function savePopupData() {
+            const text = document.getElementById('popupCandidateAns').value.trim();
+            const isCorrect = document.getElementById('chkCorrect').checked;
+            state.round2CtrlState.text = text || "(Trống)";
+            state.round2CtrlState.isCorrect = isCorrect;
+            document.getElementById('inputPopupOverlay').style.display = 'none';
+            socket.emit('trigger-popup', `Đã lưu đáp án câu ${state.activeQuestion}!`);
+        }
+
+        function revealR2AnswerGraphic() {
+            state.displayClasses = ['hide-money', 'show-topic', 'show-r2-ans'];
+            sendUpdate();
+        }
+
+        function revealR2ResultGraphic() {
+            state.displayClasses = ['hide-money', 'show-topic', 'show-r2-result'];
+            if (state.round2CtrlState.isCorrect) {
+                state.round2CtrlState.backgroundImage = "url('RightAns.png')";
+            } else {
+                state.round2CtrlState.backgroundImage = "url('WrongAns.png')";
+                state.round2CtrlState.text = state.currentRoundData[state.activeQuestion].excelAnsRaw || "Không có đáp án";
+            }
+            sendUpdate();
+        }
+
+        function closeAndMarkUsed(choice) {
+            state.usedChoices[choice] = true;
+            state.activeQuestion = null;
+            state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
+            sendUpdate();
+        }
+
+        function calculateFromSelection() {
+            let mIdx = Object.keys(state.moneyGridState).find(k => state.moneyGridState[k] === 'selected');
+            let sIdx = Object.keys(state.symbolBoxesState).find(k => state.symbolBoxesState[k] === 'selected');
+
+            if (mIdx !== undefined && sIdx !== undefined) {
+                const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
+                const rawText = layout[mIdx];
+                let val = parseInt(rawText.replace(/[^0-9]/g, ''), 10) || 0;
+                if (rawText.includes('-')) val = -val;
+
+                const signs = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['*', '*', '*', '*', '/', '/', '/', '/'];
+                const sign = signs[sIdx];
+
+                if (state.currentActiveRound === 1) {
+                    state.globalTotalPrize += (sign === '+') ? val : -val;
+                } else {
+                    if (sign === '*') state.globalTotalPrize *= val;
+                    else if (sign === '/' && val !== 0) state.globalTotalPrize = Math.round(state.globalTotalPrize / val);
+                }
+
+                state.moneyGridState[mIdx] = 'closed';
+                state.symbolBoxesState[sIdx] = 'closed';
+                sendUpdate();
+            }
+        }
+
+        function triggerExcelInput() { document.getElementById('excelInput').click(); }
+        function handleExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                round1TopicsData = []; round2TopicsData = [];
+
+                const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
+                if (fV1) {
+                    const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
+                    if (jsonV1.length > 0) {
+                        let l=[], r=[];
+                        for(let i=1; i<=6; i++) {
+                            l.push(jsonV1[i-1]?.[8] !== undefined && String(jsonV1[i-1][8]).trim()!=="" ? String(jsonV1[i-1][8]).trim() : state.currentMoneyLayoutV1[i-1]);
+                            r.push(jsonV1[i-1]?.[9] !== undefined && String(jsonV1[i-1][9]).trim()!=="" ? String(jsonV1[i-1][9]).trim() : state.currentMoneyLayoutV1[i+5]);
+                        }
+                        state.currentMoneyLayoutV1 = l.concat(r);
+                        for (let i = 1; i < jsonV1.length; i++) {
+                            if (!jsonV1[i] || !jsonV1[i][0] || String(jsonV1[i][0]).trim() === "" || String(jsonV1[i][0]).trim() === "Chủ đề") continue;
+                            round1TopicsData.push({
+                                topic: String(jsonV1[i][0]).trim(),
+                                A: { text: jsonV1[i][1] || "Trống", correct: String(jsonV1[i][4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][4]).trim() },
+                                B: { text: jsonV1[i][2] || "Trống", correct: String(jsonV1[i][5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][5]).trim() },
+                                C: { text: jsonV1[i][3] || "Trống", correct: String(jsonV1[i][6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][6]).trim() }
+                            });
+                        }
+                    }
+                }
+
+                const fV2 = workbook.SheetNames.find(n => n.trim() === "Vòng 2");
+                if (fV2) {
+                    const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
+                    if (jsonV2.length > 0) {
+                        let l=[], r=[];
+                        for(let i=1; i<=6; i++) {
+                            l.push(jsonV2[i-1]?.[8] !== undefined && String(jsonV2[i-1][8]).trim()!=="" ? String(jsonV2[i-1][8]).trim() : state.currentMoneyLayoutV2[i-1]);
+                            r.push(jsonV2[i-1]?.[9] !== undefined && String(jsonV2[i-1][9]).trim()!=="" ? String(jsonV2[i-1][9]).trim() : state.currentMoneyLayoutV2[i+5]);
+                        }
+                        state.currentMoneyLayoutV2 = l.concat(r);
+                        for (let i = 1; i < jsonV2.length; i++) {
+                            if (!jsonV2[i] || !jsonV2[i][0] || String(jsonV2[i][0]).trim() === "" || String(jsonV2[i][0]).trim() === "Chủ đề") continue;
+                            round2TopicsData.push({
+                                topic: String(jsonV2[i][0]).trim(),
+                                A: { text: jsonV2[i][1] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][4]).trim() },
+                                B: { text: jsonV2[i][2] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][5]).trim() },
+                                C: { text: jsonV2[i][3] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][6]).trim() }
+                            });
+                        }
+                    }
+                }
+                currentRoundIndexR1 = 0; currentRoundIndexR2 = 0;
+                loadRoundData();
+                sendUpdate();
+                socket.emit('trigger-popup', `NẠP ĐỀ THÀNH CÔNG!\nV1: ${round1TopicsData.length} chủ đề.\nV2: ${round2TopicsData.length} chủ đề.`);
+                event.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>

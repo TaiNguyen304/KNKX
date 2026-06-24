@@ -627,7 +627,7 @@
 
             if (state.activeQuestion) {
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
-                document.getElementById('questionBox').style.backgroundImage = `url('/box${state.activeQuestion}.png')`;
+                document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
                 document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass;
                 document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass;
             }

@@ -72,7 +72,7 @@
             background-image: url('sss.png'); background-size: 100% 100%; width: 100px; height: 80px;
             display: flex; justify-content: center; align-items: center; color: #000; font-size: 24px; font-weight: bold;
         }
-        .ans-btn.chosen { background-image: url('true ... choose strap.png') !important; color: #fff !important; }
+        .ans-btn.chosen { background-image: url('true false choose strap.png') !important; color: #fff !important; }
         .ans-btn.correct-final { background-image: url('truefalseright strap.png') !important; color: #fff !important; }
         .ans-btn.wrong-final { background-image: url('truefalsewrongstrap.png') !important; color: #fff !important; }
         .ans-btn.hidden-ans { opacity: 0 !important; }
@@ -93,6 +93,24 @@
         @keyframes stretchAcross { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
         @keyframes stretchFromCenter { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
         @keyframes fadeInText { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+        /* Hiệu ứng xuất hiện cho từng ô tiền */
+        @keyframes fadeInUpMoney {
+            0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+} 
+
+/* Khi quay lại bảng tiền, mặc định ẩn đi để chuẩn bị chạy animation */
+.money-box-animate {
+    opacity: 0;
+    animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
     </style>
 </head>
 <body>
@@ -143,6 +161,9 @@
     <script>
         const socket = io('https://knkx.onrender.com');
 
+        // Biến cờ theo dõi trạng thái hiển thị bảng tiền trước đó
+        let lastHideMoneyState = null;
+
         socket.on('sync-full-state', (state) => {
             const board = document.getElementById('gameBoard');
             
@@ -153,6 +174,15 @@
             }
 
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+
+            // Kiểm tra xem trạng thái "hide-money" hiện tại có đang bật không
+            const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
+            
+            // Chỉ kích hoạt hiệu ứng khi: Trước đó bảng tiền ĐANG ẨN (true) và hiện tại QUAY LẠI HIỂN THỊ (false)
+            const shouldAnimate = (lastHideMoneyState === true && isCurrentlyHidden === false);
+            
+            // Cập nhật trạng thái cho lần đồng bộ kế tiếp
+            lastHideMoneyState = isCurrentlyHidden;
 
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
@@ -165,6 +195,14 @@
                 box.innerText = val;
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
+                
+                if (shouldAnimate) {
+                    // Ép ô tiền ẩn đi trước khi chạy animation lần lượt
+                    box.style.opacity = '0';
+                    box.classList.add('money-box-animate');
+                    box.style.animationDelay = `${idx * 0.1}s`;
+                }
+                
                 grid.appendChild(box);
             });
 

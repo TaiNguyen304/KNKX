@@ -412,6 +412,23 @@
         .popup-actions .btn {
             flex: 1;
         }
+
+        @keyframes fadeInUpMoney {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .money-box-animate {
+            opacity: 0;
+            animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
     </style>
 </head>
 
@@ -539,16 +556,8 @@
             </div>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'F12') { e.preventDefault(); }
-            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
-        });
-        document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-    </script>
-    <script>
+   <script>
+        // 1. KHỞI TẠO KẾT NỐI SOCKET VÀ DỮ LIỆU TRƯỚC ĐỂ TRÁNH NGHẼN TRÌNH DUYỆT
         const socket = io('https://knkx.onrender.com');
 
         const DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
@@ -641,11 +650,17 @@
             document.getElementById('r2ActionRow').style.display = state.currentActiveRound === 2 ? 'flex' : 'none';
         }
 
+        let lastHideMoneyStateCtrl = null;
+
         function renderMoneyGrid() {
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
             const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+
+            const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
+            const shouldAnimate = (lastHideMoneyStateCtrl === true && isCurrentlyHidden === false);
+            lastHideMoneyStateCtrl = isCurrentlyHidden;
 
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
@@ -653,6 +668,11 @@
                 box.innerText = val;
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
+
+                if (shouldAnimate) {
+                    box.classList.add('money-box-animate');
+                    box.style.animationDelay = `${idx * 0.1}s`;
+                }
 
                 box.onclick = () => {
                     if (box.classList.contains('closed')) return;
@@ -748,7 +768,7 @@
         }
 
         function backToMoneyGrid() {
-            state.displayClasses = []; // Xóa hết class cũ
+            state.displayClasses = [];
             state.activeQuestion = null;
             sendUpdate();
         }
@@ -756,9 +776,7 @@
         function openQuestion(choice) {
             if (state.usedChoices[choice]) return;
             state.activeQuestion = choice;
-            // Cập nhật mảng displayClasses để hiển thị đúng các thành phần
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices', 'show-question'];
-            // Reset trạng thái nút bấm nếu cần
             state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
             sendUpdate();
         }
@@ -966,6 +984,16 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
+        // 2. CHUYỂN KÍCH HOẠT CHẶN PHÍM/CHUỘT PHẢI XUỐNG DƯỚI CÙNG ĐỂ CHẠY SAU KHI DOM LOAD XONG
+        window.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'F12') { e.preventDefault(); }
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
+                if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
+            });
+            document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+        });
     </script>
 </body>
 

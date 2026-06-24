@@ -7,6 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
     <style>
+        *{
+            font-weight: bold !important;
+        }
         body {
             margin: 0;
             padding: 20px;
@@ -538,7 +541,6 @@
             if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
         });
         document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-        setInterval(function () { debugger; }, 100);
     </script>
     <script>
         const socket = io('https://knkx.onrender.com');

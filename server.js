@@ -13,11 +13,11 @@ app.use(express.static(__dirname));
 
 // Routing theo yêu cầu hệ thống
 app.get('/controller', (req, res) => {
-    res.sendFile(path.join(__dirname, 'controller.html'));
+    res.sendFile(path.join(__dirname, 'Controller.html'));
 });
 
 app.get('/screen', (req, res) => {
-    res.sendFile(path.join(__dirname, 'screen.html'));
+    res.sendFile(path.join(__dirname, 'Screen.html'));
 });
 
 // Điều hướng mặc định nếu vào trang chủ
@@ -72,6 +72,7 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(PORT, () => {
+// Thay đổi dòng này ở cuối file của bạn
+http.listen(PORT, '0.0.0.0', () => {
     console.log(`Server đang chạy tại port: ${PORT}`);
 });

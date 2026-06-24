@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Screen</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
     <style>
         body {
             margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
@@ -38,7 +38,6 @@
         .money-box.closed { background-image: url('CloseStrap.png') !important; color: transparent !important; }
         .game-board.hide-money #moneyGrid { display: none !important; }
 
-        /* PHẦN CHỦ ĐỀ & LỰA CHỌN A, B, C */
         .topic-container {
             display: none; background-image: url('YellowStrap.png'); background-size: 100% 100%;
             width: 660px; height: 65px; justify-content: center; align-items: center; position: absolute; top: 0; left: 0;
@@ -59,7 +58,6 @@
         .game-board.show-choices .choice-box { animation: stretchAcross 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
         .game-board.show-choices .choice-text { animation: fadeInText 0.2s ease-in-out forwards; }
 
-        /* KHUNG CÂU HỎI VÀ ĐÚNG/SAI */
         .question-area { display: none; position: absolute; top: 77px; left: 85px; width: 575px; height: 249px; }
         .question-box {
             width: 100%; height: 100%; background-size: 100% 100%; display: flex; align-items: center;
@@ -74,7 +72,7 @@
             background-image: url('sss.png'); background-size: 100% 100%; width: 100px; height: 80px;
             display: flex; justify-content: center; align-items: center; color: #000; font-size: 24px; font-weight: bold;
         }
-        .ans-btn.chosen { background-image: url('true false choose strap.png') !important; color: #fff !important; }
+        .ans-btn.chosen { background-image: url('true ... choose strap.png') !important; color: #fff !important; }
         .ans-btn.correct-final { background-image: url('truefalseright strap.png') !important; color: #fff !important; }
         .ans-btn.wrong-final { background-image: url('truefalsewrongstrap.png') !important; color: #fff !important; }
         .ans-btn.hidden-ans { opacity: 0 !important; }
@@ -83,7 +81,6 @@
         .game-board.show-question .question-content { animation: fadeInText 0.3s ease-in-out 0.4s forwards; }
         .game-board.show-question .answer-buttons { animation: fadeInText 0.3s ease-in-out 0.7s forwards; }
 
-        /* KHUNG ĐÁP ÁN CHO VÒNG 2 */
         .round2-answer-container { display: none; position: absolute; top: 159px; width: 660px; height: 98px; }
         .round2-answer-box { width: 100%; height: 100%; background-size: 100% 100%; display: flex; justify-content: center; align-items: center; transform: scaleX(0); transform-origin: center; }
         .round2-answer-text { color: #000; font-size: 32px; font-weight: bold; text-align: center; opacity: 0; text-transform: uppercase; }
@@ -96,16 +93,6 @@
         @keyframes stretchAcross { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
         @keyframes stretchFromCenter { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
         @keyframes fadeInText { 0% { opacity: 0; } 100% { opacity: 1; } }
-
-        /* POPUP THÔNG BÁO */
-        .game-popup-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5);
-            display: none; justify-content: center; align-items: center; z-index: 9999;
-        }
-        .game-popup-box {
-            background: #fff; border: 3px solid #ff00ff; border-radius: 12px; padding: 25px 40px;
-            text-align: center; font-family: 'Arial', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
     </style>
 </head>
 <body>
@@ -145,54 +132,57 @@
         </div>
     </div>
 
-    <div class="game-popup-overlay" id="gamePopupOverlay">
-        <div class="game-popup-box">
-            <div class="game-popup-msg" id="gamePopupMsg" style="color:#000; font-size:18px; font-weight:bold;"></div>
-        </div>
-    </div>
-
     <script>
-        const socket = io();
-        let popupTimer = null;
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'F12') { e.preventDefault(); }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
+        });
+        document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+        setInterval(function () { debugger; }, 100);
+    </script>
+    <script>
+        const socket = io('https://knkx.onrender.com');
 
         socket.on('sync-full-state', (state) => {
             const board = document.getElementById('gameBoard');
             
-            // 1. Đồng bộ Round mode
             board.className = "game-board";
             if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
-            state.displayClasses.forEach(cls => board.classList.add(cls));
+            if (state.displayClasses && state.displayClasses.length > 0) {
+                state.displayClasses.forEach(cls => board.classList.add(cls));
+            }
 
-            // 2. Đồng bộ giải thưởng tổng
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
 
-            // 3. Đồng bộ Bảng tiền
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
+            const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+            
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
                 box.className = 'money-box';
                 box.innerText = val;
-                if (state.moneyGridState[idx] === 'selected') box.classList.add('selected');
-                if (state.moneyGridState[idx] === 'closed') box.classList.add('closed');
+                if (currentGridState[idx] === 'selected') box.classList.add('selected');
+                if (currentGridState[idx] === 'closed') box.classList.add('closed');
                 grid.appendChild(box);
             });
 
-            // 4. Đồng bộ Ký hiệu
             const sRow = document.getElementById('symbolsRow');
             sRow.innerHTML = '';
             const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
+            const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
+            
             displaySigns.forEach((sign, idx) => {
                 const box = document.createElement('div');
                 box.className = 'symbol-box';
                 box.innerHTML = `<span>${sign}</span>`;
-                if (state.symbolBoxesState[idx] === 'selected') box.classList.add('selected');
-                if (state.symbolBoxesState[idx] === 'closed') box.classList.add('closed');
+                if (currentSymbolState[idx] === 'selected') box.classList.add('selected');
+                if (currentSymbolState[idx] === 'closed') box.classList.add('closed');
                 sRow.appendChild(box);
             });
 
-            // 5. Đồng bộ Dữ liệu vòng & Câu hỏi đang chọn
             document.getElementById('topicText').innerText = state.currentRoundData.topic;
             ['A','B','C'].forEach(ch => {
                 const cBox = document.getElementById(`choice${ch}`);
@@ -203,27 +193,15 @@
             if (state.activeQuestion) {
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
-                
-                // Trạng thái nút bấm vòng 1
                 document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass;
                 document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass;
             }
 
-            // 6. Trạng thái đáp án vòng 2
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
             r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage;
             r2Txt.innerText = state.round2CtrlState.text;
             r2Txt.style.color = state.round2CtrlState.textColor;
-        });
-
-        socket.on('display-popup', (msg) => {
-            if (popupTimer) clearTimeout(popupTimer);
-            document.getElementById('gamePopupMsg').innerText = msg;
-            document.getElementById('gamePopupOverlay').style.display = 'flex';
-            popupTimer = setTimeout(() => {
-                document.getElementById('gamePopupOverlay').style.display = 'none';
-            }, 2500);
         });
     </script>
 </body>

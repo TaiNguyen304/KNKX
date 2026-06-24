@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Controller</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
     <style>
         body {
             margin: 0;
@@ -16,6 +17,7 @@
             flex-direction: column;
             align-items: center;
         }
+
         .main-title {
             color: #39ff14;
             font-size: 28px;
@@ -23,6 +25,7 @@
             margin-bottom: 15px;
             text-shadow: 0 0 10px #39ff14;
         }
+
         .game-board {
             display: flex;
             flex-direction: column;
@@ -33,6 +36,7 @@
             border-radius: 12px;
             border: 1px solid #444;
         }
+
         .main-prize {
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
@@ -46,11 +50,13 @@
             font-weight: bold;
             cursor: pointer;
         }
+
         .symbols-row {
             display: flex;
             width: 450px;
             gap: 4px;
         }
+
         .symbol-box {
             background-image: url('SymbolStrap.png');
             background-size: 100% 100%;
@@ -64,15 +70,35 @@
             color: #000000;
             cursor: pointer;
         }
-        .symbol-box.selected { background-image: url('SymbolChooseStrap.png') !important; }
-        .symbol-box.closed { background-image: url('SymbolCloseStrap.png') !important; color: transparent !important; pointer-events: none;}
-        
+
+        .symbol-box.selected {
+            background-image: url('SymbolChooseStrap.png') !important;
+        }
+
+        .symbol-box.closed {
+            background-image: url('SymbolCloseStrap.png') !important;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .bottom-area {
+            position: relative;
+            width: 450px;
+            height: 280px;
+            margin-top: 5px;
+        }
+
         .money-grid {
             display: grid;
             grid-template-columns: repeat(2, 220px);
             grid-gap: 6px;
-            grid-template-rows: repeat(6, 45px);
+            grid-auto-flow: column;
+            grid-template-rows: repeat(6, 40px);
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
+
         .money-box {
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
@@ -83,9 +109,195 @@
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
+            height: 40px;
+            box-sizing: border-box;
         }
-        .money-box.selected { background-image: url('ChooseStrap.png') !important; }
-        .money-box.closed { background-image: url('CloseStrap.png') !important; color: transparent !important; pointer-events: none;}
+
+        .money-box.selected {
+            background-image: url('ChooseStrap.png') !important;
+        }
+
+        .money-box.closed {
+            background-image: url('CloseStrap.png') !important;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .game-board.hide-money #moneyGrid {
+            display: none !important;
+        }
+
+        .topic-container {
+            display: none;
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            width: 450px;
+            height: 45px;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .topic-text {
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .choices-column {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            position: absolute;
+            top: 55px;
+            left: 0;
+            z-index: 10;
+        }
+
+        .choice-box {
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .choice-box.used {
+            background-image: url('bbb.png') !important;
+        }
+
+        .choice-text {
+            color: #000;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .game-board.show-topic .topic-container {
+            display: flex;
+        }
+
+        .game-board.show-choices .choices-column {
+            display: flex;
+        }
+
+        .question-area {
+            display: none;
+            position: absolute;
+            top: 55px;
+            left: 60px;
+            width: 390px;
+            height: 166px;
+        }
+
+        .question-box {
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            display: flex;
+            align-items: center;
+            padding: 10px 90px 10px 15px;
+            box-sizing: border-box;
+        }
+
+        .game-board.round-2-mode .question-box {
+            padding: 10px 15px 10px 15px !important;
+        }
+
+        .question-content {
+            color: #000;
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        .answer-buttons {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .game-board.round-2-mode .answer-buttons {
+            display: none !important;
+        }
+
+        .ans-btn {
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            width: 70px;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .ans-btn.chosen {
+            background-image: url('true false choose strap.png') !important;
+            color: #fff !important;
+        }
+
+        .ans-btn.correct-final {
+            background-image: url('truefalseright strap.png') !important;
+            color: #fff !important;
+        }
+
+        .ans-btn.wrong-final {
+            background-image: url('truefalsewrongstrap.png') !important;
+            color: #fff !important;
+        }
+
+        .ans-btn.hidden-ans {
+            opacity: 0 !important;
+        }
+
+        .game-board.show-question .question-area {
+            display: block;
+        }
+
+        .round2-answer-container {
+            display: none;
+            position: absolute;
+            top: 110px;
+            width: 450px;
+            height: 65px;
+        }
+
+        .round2-answer-box {
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .round2-answer-text {
+            color: #000;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .game-board.show-r2-ans .round2-answer-container,
+        .game-board.show-r2-result .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.show-r2-ans .choices-column,
+        .game-board.show-r2-result .choices-column {
+            display: none !important;
+        }
 
         .controls-panel {
             margin-top: 15px;
@@ -98,28 +310,111 @@
             width: 500px;
             box-sizing: border-box;
         }
-        .controls-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-        .btn {
-            height: 36px; padding: 0 10px; border: 1px solid #fff; border-radius: 4px;
-            font-size: 12px; font-weight: bold; cursor: pointer; color: #fff; background-color: #333;
+
+        .controls-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
-        .btn:hover { background-color: orange !important; color: white !important; }
-        .btn-round-toggle { background-color: blue !important; }
-        .btn-round-toggle.active-round { background-color: #800080 !important; }
-        .btn-view { background-color: green; }
-        .btn-close { background-color: red; }
-        .btn-excel { background-color: purple; }
-        .btn-result, .btn-action-yellow { background-color: yellow !important; color: #000 !important; }
+
+        .btn {
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+            background-color: #333;
+        }
+
+        .btn:hover {
+            background-color: orange !important;
+            color: white !important;
+        }
+
+        .btn-round-toggle {
+            background-color: blue !important;
+        }
+
+        .btn-round-toggle.active-round {
+            background-color: #800080 !important;
+        }
+
+        .btn-view {
+            background-color: green;
+        }
+
+        .btn-close {
+            background-color: red;
+        }
+
+        .btn-excel {
+            background-color: purple;
+        }
+
+        .btn-result,
+        .btn-action-yellow {
+            background-color: yellow !important;
+            color: #000 !important;
+        }
+        
+        .btn-reset {
+            background-color: #ff00cc !important;
+            color: #fff !important;
+            text-shadow: 0 0 5px #fff;
+        }
 
         .input-popup-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
         }
-        .input-popup-box { background: #fff; color: #000; padding: 20px; border-radius: 8px; width: 300px; }
-        .input-popup-textbox { width: 100%; height: 35px; margin: 10px 0; text-transform: uppercase; box-sizing: border-box;}
-        .popup-actions { display: flex; justify-content: space-between; margin-top: 15px;}
+
+        .input-popup-box {
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .input-popup-textbox {
+            width: 100%;
+            height: 35px;
+            margin: 12px 0;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            padding: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .popup-actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .popup-actions .btn {
+            flex: 1;
+        }
     </style>
 </head>
+
 <body>
 
     <div class="main-title">BÀN ĐIỀU KHIỂN HOST (CONTROLLER)</div>
@@ -127,17 +422,52 @@
     <div class="game-board" id="gameBoard">
         <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
         <div class="symbols-row" id="symbolsRow"></div>
-        <div style="margin: 10px 0; font-weight: bold; color: #ff00cc;" id="currentTopicDisplay">Chủ đề: TỪ CHỦ ĐỀ 1</div>
-        <div class="money-grid" id="moneyGrid"></div>
+
+        <div class="bottom-area">
+            <div class="money-grid" id="moneyGrid"></div>
+
+            <div class="topic-container" id="topicContainer">
+                <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
+            </div>
+
+            <div class="choices-column" id="choicesColumn">
+                <div class="choice-box" id="choiceA">
+                    <div class="choice-text">A</div>
+                </div>
+                <div class="choice-box" id="choiceB">
+                    <div class="choice-text">B</div>
+                </div>
+                <div class="choice-box" id="choiceC">
+                    <div class="choice-text">C</div>
+                </div>
+            </div>
+
+            <div class="question-area" id="questionArea">
+                <div class="question-box" id="questionBox">
+                    <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
+                </div>
+                <div class="answer-buttons" id="answerButtons">
+                    <div class="ans-btn" id="trueBtn">ĐÚNG</div>
+                    <div class="ans-btn" id="falseBtn">SAI</div>
+                </div>
+            </div>
+
+            <div class="round2-answer-container" id="round2AnswerContainer">
+                <div class="round2-answer-box" id="round2AnswerBox">
+                    <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="controls-panel">
         <div class="controls-row">
             <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
             <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
+            <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
         </div>
         <div class="controls-row">
-            <button class="btn btn-view" onclick="changeScreenClasses(['hide-money', 'show-topic'])">HIỆN CHỦ ĐỀ</button>
+            <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
             <button class="btn btn-view" onclick="changeScreenClasses(['hide-money', 'show-topic', 'show-choices'])">HIỆN A, B, C</button>
             <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
             <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
@@ -169,9 +499,9 @@
         <div class="input-popup-box">
             <h3 id="popupTitle" style="margin:0;">Nhập Đáp Án</h3>
             <input type="text" id="popupCandidateAns" class="input-popup-textbox" placeholder="Nhập đáp án thí sinh...">
-            <div>
+            <div style="display: flex; justify-content: center; gap: 15px; font-weight: bold; margin-top: 5px;">
                 <label><input type="checkbox" id="chkCorrect" checked onchange="document.getElementById('chkWrong').checked=!this.checked"> ĐÚNG</label>
-                <label style="margin-left:20px;"><input type="checkbox" id="chkWrong" onchange="document.getElementById('chkCorrect').checked=!this.checked"> SAI</label>
+                <label><input type="checkbox" id="chkWrong" onchange="document.getElementById('chkCorrect').checked=!this.checked"> SAI</label>
             </div>
             <div class="popup-actions">
                 <button class="btn" style="background:green;" onclick="savePopupData()">LƯU</button>
@@ -180,31 +510,125 @@
         </div>
     </div>
 
+    <div class="input-popup-overlay" id="confirmResetOverlay">
+        <div class="input-popup-box" style="border: 2px solid #ff00cc;">
+            <h3 style="margin:0; color: #ff00cc;">XÁC NHẬN RESET</h3>
+            <p style="font-weight: bold; font-size: 14px; margin: 15px 0;">Bạn có chắc chắn muốn RESET toàn bộ điểm số, khôi phục các ô tiền và ký tự dấu đã bị ẩn không?</p>
+            <div class="popup-actions">
+                <button class="btn" style="background:green;" onclick="executeGameReset()">ĐỒNG Ý</button>
+                <button class="btn" style="background:red;" onclick="document.getElementById('confirmResetOverlay').style.display='none'">HỦY BỎ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-popup-overlay" id="controllerAlertOverlay">
+        <div class="input-popup-box" style="border: 2px solid #39ff14; width: 340px;">
+            <h3 style="margin:0; color: red;">THÔNG BÁO</h3>
+            <p id="controllerAlertMessage" style="font-weight: bold; font-size: 15px; margin: 15px 0; white-space: pre-line; color: #000;"></p>
+            <div class="popup-actions">
+                <button class="btn" style="background:red; max-width: 120px;" onclick="document.getElementById('controllerAlertOverlay').style.display='none'">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const socket = io();
-        let state = {};
-        let round1TopicsData = [];
-        let round2TopicsData = [];
-        let currentRoundIndexR1 = 0;
-        let currentRoundIndexR2 = 0;
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'F12') { e.preventDefault(); }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
+        });
+        document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+        setInterval(function () { debugger; }, 100);
+    </script>
+    <script>
+        const socket = io('https://knkx.onrender.com');
+
+        const DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
+        const DEFAULT_LAYOUT_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+
+        let state = {
+            currentActiveRound: 1,
+            globalTotalPrize: 0,
+            currentMoneyLayoutV1: [...DEFAULT_LAYOUT_V1],
+            currentMoneyLayoutV2: [...DEFAULT_LAYOUT_V2],
+            moneyGridStateV1: {},
+            moneyGridStateV2: {},
+            symbolBoxesStateV1: {},
+            symbolBoxesStateV2: {},
+            currentRoundData: { topic: "TỪ CHỦ ĐỀ 1", A: { text: 'Trống', correct: true }, B: { text: 'Trống', correct: true }, C: { text: 'Trống', correct: true } },
+            displayClasses: [],
+            activeQuestion: null,
+            round1CtrlState: { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" },
+            round2CtrlState: { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" },
+            usedChoices: { A: false, B: false, C: false },
+            round1TopicsData: [],
+            round2TopicsData: [],
+            currentRoundIndexR1: 0,
+            currentRoundIndexR2: 0
+        };
+
+        let isFirstTopicLoad = true;
+
+        function showControllerAlert(msg) {
+            document.getElementById('controllerAlertMessage').innerText = msg;
+            document.getElementById('controllerAlertOverlay').style.display = 'flex';
+        }
+
+        function sendUpdate() {
+            renderMoneyGrid();
+            renderSymbolsRow();
+            updateUI();
+            socket.emit('update-game-state', state);
+        }
 
         socket.on('sync-full-state', (serverState) => {
+            if (state.round1TopicsData && state.round1TopicsData.length > 0) {
+                serverState.round1TopicsData = state.round1TopicsData;
+                serverState.currentRoundIndexR1 = state.currentRoundIndexR1;
+            }
+            if (state.round2TopicsData && state.round2TopicsData.length > 0) {
+                serverState.round2TopicsData = state.round2TopicsData;
+                serverState.currentRoundIndexR2 = state.currentRoundIndexR2;
+            }
+
             state = serverState;
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
         });
 
-        function sendUpdate() {
-            socket.emit('update-game-state', state);
-        }
-
         function updateUI() {
+            const board = document.getElementById('gameBoard');
+            board.className = "game-board";
+            if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
+            if (state.displayClasses) {
+                state.displayClasses.forEach(cls => board.classList.add(cls));
+            }
+
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
             document.getElementById('btnRound1').classList.toggle('active-round', state.currentActiveRound === 1);
             document.getElementById('btnRound2').classList.toggle('active-round', state.currentActiveRound === 2);
-            document.getElementById('currentTopicDisplay').innerText = "Chủ đề: " + state.currentRoundData.topic;
-            
+
+            document.getElementById('topicText').innerText = state.currentRoundData.topic;
+
+            ['A', 'B', 'C'].forEach(ch => {
+                const cBox = document.getElementById(`choice${ch}`);
+                if (state.usedChoices[ch]) cBox.classList.add('used');
+                else cBox.classList.remove('used');
+            });
+
+            if (state.activeQuestion) {
+                document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
+                document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
+                document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass;
+                document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass;
+            }
+
+            const r2Box = document.getElementById('round2AnswerBox');
+            const r2Txt = document.getElementById('round2AnswerText');
+            r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage;
+            r2Txt.innerText = state.round2CtrlState.text;
+
             document.getElementById('r1ActionRow').style.display = state.currentActiveRound === 1 ? 'flex' : 'none';
             document.getElementById('r2ActionRow').style.display = state.currentActiveRound === 2 ? 'flex' : 'none';
         }
@@ -213,18 +637,23 @@
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
-            
+            const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
                 box.className = 'money-box';
                 box.innerText = val;
-                if (state.moneyGridState[idx] === 'selected') box.classList.add('selected');
-                if (state.moneyGridState[idx] === 'closed') box.classList.add('closed');
-                
+                if (currentGridState[idx] === 'selected') box.classList.add('selected');
+                if (currentGridState[idx] === 'closed') box.classList.add('closed');
+
                 box.onclick = () => {
                     if (box.classList.contains('closed')) return;
-                    state.moneyGridState = {}; 
-                    state.moneyGridState[idx] = 'selected';
+                    
+                    Object.keys(currentGridState).forEach(k => {
+                        if (currentGridState[k] === 'selected') delete currentGridState[k];
+                    });
+                    
+                    currentGridState[idx] = 'selected';
                     sendUpdate();
                 };
                 grid.appendChild(box);
@@ -234,20 +663,24 @@
         function renderSymbolsRow() {
             const container = document.getElementById('symbolsRow');
             container.innerHTML = '';
-            const signs = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['*', '*', '*', '*', '/', '/', '/', '/'];
             const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
+            const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
 
-            signs.forEach((sign, idx) => {
+            displaySigns.forEach((sign, idx) => {
                 const box = document.createElement('div');
                 box.className = 'symbol-box';
-                box.innerHTML = `<span>${displaySigns[idx]}</span>`;
-                if (state.symbolBoxesState[idx] === 'selected') box.classList.add('selected');
-                if (state.symbolBoxesState[idx] === 'closed') box.classList.add('closed');
+                box.innerHTML = `<span>${sign}</span>`;
+                if (currentSymbolState[idx] === 'selected') box.classList.add('selected');
+                if (currentSymbolState[idx] === 'closed') box.classList.add('closed');
 
                 box.onclick = () => {
                     if (box.classList.contains('closed')) return;
-                    state.symbolBoxesState = {};
-                    state.symbolBoxesState[idx] = 'selected';
+                    
+                    Object.keys(currentSymbolState).forEach(k => {
+                        if (currentSymbolState[k] === 'selected') delete currentSymbolState[k];
+                    });
+
+                    currentSymbolState[idx] = 'selected';
                     sendUpdate();
                 };
                 container.appendChild(box);
@@ -256,18 +689,22 @@
 
         function switchRound(roundNum) {
             state.currentActiveRound = roundNum;
-            state.moneyGridState = {};
-            state.symbolBoxesState = {};
+            Object.keys(state.moneyGridStateV1).forEach(k => { if(state.moneyGridStateV1[k] === 'selected') delete state.moneyGridStateV1[k]; });
+            Object.keys(state.moneyGridStateV2).forEach(k => { if(state.moneyGridStateV2[k] === 'selected') delete state.moneyGridStateV2[k]; });
+            Object.keys(state.symbolBoxesStateV1).forEach(k => { if(state.symbolBoxesStateV1[k] === 'selected') delete state.symbolBoxesStateV1[k]; });
+            Object.keys(state.symbolBoxesStateV2).forEach(k => { if(state.symbolBoxesStateV2[k] === 'selected') delete state.symbolBoxesStateV2[k]; });
+            
             state.displayClasses = [];
             state.activeQuestion = null;
+            isFirstTopicLoad = true; 
             loadRoundData();
             sendUpdate();
         }
 
         function loadRoundData() {
-            let targetList = (state.currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
-            let targetIdx = (state.currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
-            if (targetList.length === 0 || targetIdx >= targetList.length) return;
+            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
+            if (!targetList || targetList.length === 0 || targetIdx >= targetList.length) return;
 
             const round = targetList[targetIdx];
             state.currentRoundData = {
@@ -279,18 +716,25 @@
             state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
         }
 
-        function changeScreenClasses(classesArray) {
-            let targetList = (state.currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
-            let targetIdx = (state.currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
+        function clickNextTopic() {
+            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
             
-            if (state.activeQuestion === null && classesArray.includes('show-topic') && !classesArray.includes('show-choices')) {
-                if (targetList.length > 0) {
-                    if (currentRoundIndexR1 > 0 || currentRoundIndexR2 > 0) {
-                        if (state.currentActiveRound === 1) currentRoundIndexR1++; else currentRoundIndexR2++;
+            if (targetList && targetList.length > 0) {
+                if (isFirstTopicLoad) {
+                    isFirstTopicLoad = false;
+                } else {
+                    if (state.currentActiveRound === 1) {
+                        if (state.round1TopicsData[state.currentRoundIndexR1 + 1]) state.currentRoundIndexR1++;
+                    } else {
+                        if (state.round2TopicsData[state.currentRoundIndexR2 + 1]) state.currentRoundIndexR2++;
                     }
-                    loadRoundData();
                 }
+                loadRoundData();
             }
+            changeScreenClasses(['hide-money', 'show-topic']);
+        }
+
+        function changeScreenClasses(classesArray) {
             state.displayClasses = classesArray;
             sendUpdate();
         }
@@ -336,6 +780,7 @@
         function openInputPopup() {
             if (!state.activeQuestion) return;
             document.getElementById('popupTitle').innerText = `Nhập câu ${state.activeQuestion}`;
+            document.getElementById('popupCandidateAns').value = '';
             document.getElementById('inputPopupOverlay').style.display = 'flex';
         }
 
@@ -345,6 +790,7 @@
             state.round2CtrlState.text = text || "(Trống)";
             state.round2CtrlState.isCorrect = isCorrect;
             document.getElementById('inputPopupOverlay').style.display = 'none';
+            sendUpdate();
             socket.emit('trigger-popup', `Đã lưu đáp án câu ${state.activeQuestion}!`);
         }
 
@@ -372,14 +818,16 @@
         }
 
         function calculateFromSelection() {
-            let mIdx = Object.keys(state.moneyGridState).find(k => state.moneyGridState[k] === 'selected');
-            let sIdx = Object.keys(state.symbolBoxesState).find(k => state.symbolBoxesState[k] === 'selected');
+            const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+            const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
+
+            let mIdx = Object.keys(currentGridState).find(k => currentGridState[k] === 'selected');
+            let sIdx = Object.keys(currentSymbolState).find(k => currentSymbolState[k] === 'selected');
 
             if (mIdx !== undefined && sIdx !== undefined) {
                 const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
                 const rawText = layout[mIdx];
                 let val = parseInt(rawText.replace(/[^0-9]/g, ''), 10) || 0;
-                if (rawText.includes('-')) val = -val;
 
                 const signs = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['*', '*', '*', '*', '/', '/', '/', '/'];
                 const sign = signs[sIdx];
@@ -391,13 +839,47 @@
                     else if (sign === '/' && val !== 0) state.globalTotalPrize = Math.round(state.globalTotalPrize / val);
                 }
 
-                state.moneyGridState[mIdx] = 'closed';
-                state.symbolBoxesState[sIdx] = 'closed';
+                currentGridState[mIdx] = 'closed';
+                currentSymbolState[sIdx] = 'closed';
                 sendUpdate();
             }
         }
 
+        function triggerResetConfirmPopup() {
+            document.getElementById('confirmResetOverlay').style.display = 'flex';
+        }
+
+        function executeGameReset() {
+            document.getElementById('confirmResetOverlay').style.display = 'none';
+            
+            state.globalTotalPrize = 0;
+            state.moneyGridStateV1 = {};
+            state.moneyGridStateV2 = {};
+            state.symbolBoxesStateV1 = {};
+            state.symbolBoxesStateV2 = {};
+            state.usedChoices = { A: false, B: false, C: false };
+            state.displayClasses = [];
+            state.activeQuestion = null;
+            isFirstTopicLoad = true;
+            
+            state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
+            state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+            
+            if (state.currentActiveRound === 1) {
+                state.currentRoundIndexR1 = 0;
+            } else {
+                state.currentRoundIndexR2 = 0;
+            }
+            
+            loadRoundData();
+            sendUpdate();
+            
+            socket.emit('trigger-popup', "HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
+            showControllerAlert("Hệ thống đã được đặt lại thành công!");
+        }
+
         function triggerExcelInput() { document.getElementById('excelInput').click(); }
+        
         function handleExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -405,25 +887,33 @@
             reader.onload = function (e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                round1TopicsData = []; round2TopicsData = [];
+
+                state.round1TopicsData = [];
+                state.round2TopicsData = [];
+
+                let l1 = [], r1 = [];
+                let l2 = [], r2 = [];
 
                 const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
                 if (fV1) {
                     const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
                     if (jsonV1.length > 0) {
-                        let l=[], r=[];
-                        for(let i=1; i<=6; i++) {
-                            l.push(jsonV1[i-1]?.[8] !== undefined && String(jsonV1[i-1][8]).trim()!=="" ? String(jsonV1[i-1][8]).trim() : state.currentMoneyLayoutV1[i-1]);
-                            r.push(jsonV1[i-1]?.[9] !== undefined && String(jsonV1[i-1][9]).trim()!=="" ? String(jsonV1[i-1][9]).trim() : state.currentMoneyLayoutV1[i+5]);
+                        for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
+                            let cellLeft = jsonV1[rowIdx]?.[8];
+                            let cellRight = jsonV1[rowIdx]?.[9];
+                            
+                            l1.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V1[rowIdx]);
+                            r1.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V1[rowIdx + 6]);
                         }
-                        state.currentMoneyLayoutV1 = l.concat(r);
-                        for (let i = 1; i < jsonV1.length; i++) {
-                            if (!jsonV1[i] || !jsonV1[i][0] || String(jsonV1[i][0]).trim() === "" || String(jsonV1[i][0]).trim() === "Chủ đề") continue;
-                            round1TopicsData.push({
-                                topic: String(jsonV1[i][0]).trim(),
-                                A: { text: jsonV1[i][1] || "Trống", correct: String(jsonV1[i][4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][4]).trim() },
-                                B: { text: jsonV1[i][2] || "Trống", correct: String(jsonV1[i][5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][5]).trim() },
-                                C: { text: jsonV1[i][3] || "Trống", correct: String(jsonV1[i][6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[i][6]).trim() }
+                        state.currentMoneyLayoutV1 = l1.concat(r1);
+
+                        for (let qIdx = 1; qIdx < jsonV1.length; qIdx++) {
+                            if (!jsonV1[qIdx] || !jsonV1[qIdx][0] || String(jsonV1[qIdx][0]).trim() === "" || String(jsonV1[qIdx][0]).trim() === "Chủ đề") continue;
+                            state.round1TopicsData.push({
+                                topic: String(jsonV1[qIdx][0]).trim(),
+                                A: { text: jsonV1[qIdx][1] || "Trống", correct: String(jsonV1[qIdx][4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][4]).trim() },
+                                B: { text: jsonV1[qIdx][2] || "Trống", correct: String(jsonV1[qIdx][5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][5]).trim() },
+                                C: { text: jsonV1[qIdx][3] || "Trống", correct: String(jsonV1[qIdx][6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][6]).trim() }
                             });
                         }
                     }
@@ -433,31 +923,40 @@
                 if (fV2) {
                     const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
                     if (jsonV2.length > 0) {
-                        let l=[], r=[];
-                        for(let i=1; i<=6; i++) {
-                            l.push(jsonV2[i-1]?.[8] !== undefined && String(jsonV2[i-1][8]).trim()!=="" ? String(jsonV2[i-1][8]).trim() : state.currentMoneyLayoutV2[i-1]);
-                            r.push(jsonV2[i-1]?.[9] !== undefined && String(jsonV2[i-1][9]).trim()!=="" ? String(jsonV2[i-1][9]).trim() : state.currentMoneyLayoutV2[i+5]);
+                        for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
+                            let cellLeft = jsonV2[rowIdx]?.[8];
+                            let cellRight = jsonV2[rowIdx]?.[9];
+                            
+                            l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[rowIdx]);
+                            r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[rowIdx + 6]);
                         }
-                        state.currentMoneyLayoutV2 = l.concat(r);
-                        for (let i = 1; i < jsonV2.length; i++) {
-                            if (!jsonV2[i] || !jsonV2[i][0] || String(jsonV2[i][0]).trim() === "" || String(jsonV2[i][0]).trim() === "Chủ đề") continue;
-                            round2TopicsData.push({
-                                topic: String(jsonV2[i][0]).trim(),
-                                A: { text: jsonV2[i][1] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][4]).trim() },
-                                B: { text: jsonV2[i][2] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][5]).trim() },
-                                C: { text: jsonV2[i][3] || "Trống", correct: true, excelAnsRaw: String(jsonV2[i][6]).trim() }
+                        state.currentMoneyLayoutV2 = l2.concat(r2);
+
+                        for (let qIdx = 1; qIdx < jsonV2.length; qIdx++) {
+                            if (!jsonV2[qIdx] || !jsonV2[qIdx][0] || String(jsonV2[qIdx][0]).trim() === "" || String(jsonV2[qIdx][0]).trim() === "Chủ đề") continue;
+                            state.round2TopicsData.push({
+                                topic: String(jsonV2[qIdx][0]).trim(),
+                                A: { text: jsonV2[qIdx][1] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][4]).trim() },
+                                B: { text: jsonV2[qIdx][2] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][5]).trim() },
+                                C: { text: jsonV2[qIdx][3] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][6]).trim() }
                             });
                         }
                     }
                 }
-                currentRoundIndexR1 = 0; currentRoundIndexR2 = 0;
+                state.currentRoundIndexR1 = 0;
+                state.currentRoundIndexR2 = 0;
+                isFirstTopicLoad = true; 
                 loadRoundData();
                 sendUpdate();
-                socket.emit('trigger-popup', `NẠP ĐỀ THÀNH CÔNG!\nV1: ${round1TopicsData.length} chủ đề.\nV2: ${round2TopicsData.length} chủ đề.`);
+                
+                const successMsg = `NẠP ĐỀ THÀNH CÔNG!\n- Vòng 1: ${state.round1TopicsData.length} chủ đề.\n- Vòng 2: ${state.round2TopicsData.length} chủ đề.`;
+                socket.emit('trigger-popup', successMsg);
+                showControllerAlert(successMsg);
                 event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
     </script>
 </body>
+
 </html>

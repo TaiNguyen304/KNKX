@@ -877,23 +877,28 @@
         function moneyGridControl(action) {
             if (action === 'show') {
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-                emitSound('ding.mp3');
+
+                // HIỆU ỨNG CHẠY BẢNG TIỀN: Phát tiếng ding 12 lần liên tiếp, mỗi lần cách nhau 100 mili-giây
+                let count = 0;
+                const dingInterval = setInterval(() => {
+                    emitSound('ding.mp3');
+                    count++;
+                    if (count >= 12) {
+                        clearInterval(dingInterval); // Dừng lại sau khi đã phát đủ 12 lần
+                    }
+                }, 100); // Bạn có thể chỉnh 100 thành 80 hoặc 150 tùy thuộc vào tốc độ mong muốn
+
             } else if (action === 'hide') {
                 if (!state.displayClasses.includes('hide-money')) {
                     state.displayClasses.push('hide-money');
                 }
             } else if (action === 'reset') {
-                if (state.currentActiveRound === 1) {
-                    state.moneyGridStateV1 = {};
-                    state.symbolBoxesStateV1 = {};
-                    state.globalTotalPrize = 0; // Vòng 1 reset bảng tiền về 0
-                } else {
-                    state.moneyGridStateV2 = {};
-                    state.symbolBoxesStateV2 = {};
-                    // Vòng 2 lấy số đang nhập ở textbox gán ngược lại cho hệ thống
-                    let rawText = document.getElementById('txtTotalPrize').value.replace(/[^0-9]/g, '');
-                    state.globalTotalPrize = parseInt(rawText, 10) || 0;
-                }
+                state.globalTotalPrize = 0;
+                state.currentMoneyLayoutV1 = ["0 ₫", "100 ₫", "200 ₫", "500 ₫", "500 ₫", "500 ₫", "1.000 ₫", "1.000 ₫", "1.000 ₫", "2.000 ₫", "3.000 ₫", "5.000 ₫"];
+                state.currentSymbolState = Array(12).fill('normal');
+                state.usedChoices = { A: false, B: false, C: false };
+                state.activeQuestion = null;
+                state.displayClasses = [];
             }
             sendUpdate();
         }
@@ -954,9 +959,20 @@
         }
 
         function backToMoneyGrid() {
-            state.displayClasses = [];
+            state.displayClasses = state.displayClasses.filter(cls => cls !== 'show-topic' && cls !== 'show-choices' && cls !== 'show-question' && cls !== 'show-r2-ans' && cls !== 'play-close' && cls !== 'show-r2-result');
+            state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
             state.activeQuestion = null;
-            emitSound('ding.mp3');
+
+            // HIỆU ỨNG QUAY LẠI BẢNG TIỀN: Phát tiếng ding 12 lần liên tiếp khi hiện lại 12 ô tiền
+            let count = 0;
+            const dingInterval = setInterval(() => {
+                emitSound('ding.mp3');
+                count++;
+                if (count >= 12) {
+                    clearInterval(dingInterval);
+                }
+            }, 100);
+
             sendUpdate();
         }
 

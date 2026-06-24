@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Khắc Nhập Khắc Xuất</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: url('bg1.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* KHUNG CHỨA TOÀN BỘ BẢNG CHÍNH GIỮA MÀN HÌNH */
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            gap: 10px;
+        }
+
+        /* 1. THANH TỔNG TIỀN TRÊN CÙNG */
+        .main-prize {
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 660px;
+            height: 85px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000000;
+            font-size: 42px;
+            font-weight: bold;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        /* 2. HÀNG Ô KÝ HIỆU */
+        .symbols-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width: 660px;
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+
+        .symbol-box {
+            background-image: url('SymbolStrap.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            flex: 1;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            font-size: 36px;
+            font-weight: bold;
+            color: #000000;
+            cursor: pointer;
+        }
+
+        /* Căn giữa chính xác tuyệt đối cho các dấu ×, ÷ của vòng 2 */
+        .game-board.round-2-mode .symbol-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .game-board.round-2-mode .symbol-box span {
+            display: inline-block;
+            text-align: center;
+            line-height: 1;
+            position: relative;
+        }
+
+        .game-board.round-2-mode .symbol-box.divide span {
+            top: -2px;
+        }
+
+        .symbol-box.selected {
+            background-image: url('SymbolChooseStrap.png') !important;
+        }
+
+        .symbol-box.closed {
+            background-image: url('SymbolCloseStrap.png') !important;
+            color: transparent !important;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .symbol-box.minus span {
+            position: relative;
+            top: -3px;
+        }
+
+        /* KHUNG CHỨA PHẦA DƯỚI */
+        .bottom-area {
+            position: relative;
+            width: 660px;
+            height: 400px;
+        }
+
+        /* BẢNG HIỂN THỊ TIỀN */
+        .money-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 325px);
+            grid-gap: 8px 10px;
+            grid-auto-flow: column;
+            grid-template-rows: repeat(6, 60px);
+            width: 100%;
+            height: 100%;
+        }
+
+        .money-box {
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            align-items: center;
+            box-sizing: border-box;
+            color: #000000;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0;
+            animation: appearDefault 0.3s ease-in-out forwards;
+        }
+
+        /* Căn giữa chữ số hệ số khi ở Vòng 2 */
+        .game-board.round-2-mode .money-box {
+            justify-content: center !important;
+            padding-right: 0 !important;
+        }
+
+        .money-box.selected {
+            background-image: url('ChooseStrap.png') !important;
+        }
+
+        .money-box.closed {
+            background-image: url('CloseStrap.png') !important;
+            color: transparent !important;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        @keyframes appearDefault {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .game-board.hide-money #moneyGrid {
+            display: none !important;
+        }
+
+        /* PHẦN CHỦ ĐỀ & LỰA CHỌN A, B, C */
+        .topic-container {
+            display: none;
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 660px;
+            height: 65px;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: scaleX(0);
+            transform-origin: center;
+        }
+
+        .topic-text {
+            color: #000000;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            opacity: 0;
+        }
+
+        .choices-column {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            position: absolute;
+            top: 77px;
+            left: 0;
+            z-index: 10;
+        }
+
+        .choice-box {
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 75px;
+            height: 75px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            transform: scaleX(0);
+            transform-origin: center;
+        }
+
+        .choice-box.used {
+            background-image: url('bbb.png') !important;
+        }
+
+        .choice-text {
+            color: #000000;
+            font-size: 44px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .game-board.show-topic .topic-container {
+            display: flex;
+            animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-topic .topic-text {
+            animation: fadeInText 0.2s ease-in-out 0.3s forwards;
+        }
+
+        .game-board.show-choices .choices-column {
+            display: flex;
+        }
+
+        .game-board.show-choices .choice-box {
+            display: flex;
+            animation: stretchAcross 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-choices .choice-text {
+            animation: fadeInText 0.2s ease-in-out forwards;
+        }
+
+        /* KHUNG CÂU HỎI VÀ ĐÚNG/SAI */
+        .question-area {
+            display: none;
+            position: absolute;
+            top: 77px;
+            left: 85px;
+            width: 575px;
+            height: 249px;
+            box-sizing: border-box;
+        }
+
+        .question-box {
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            padding: 20px 145px 20px 30px;
+            box-sizing: border-box;
+            transform: scaleX(0);
+            transform-origin: left center;
+        }
+
+        .game-board.round-2-mode .question-box {
+            padding: 20px 30px 20px 30px !important;
+        }
+
+        .question-content {
+            color: #000000;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.4;
+            opacity: 0;
+        }
+
+        .answer-buttons {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            opacity: 0;
+        }
+
+        .game-board.round-2-mode .answer-buttons {
+            display: none !important;
+        }
+
+        .ans-btn {
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 100px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000000;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .ans-btn.chosen {
+            background-image: url('true false choose strap.png') !important;
+            color: #ffffff !important;
+        }
+
+        .ans-btn.correct-final {
+            background-image: url('truefalseright strap.png') !important;
+            color: #ffffff !important;
+        }
+
+        .ans-btn.wrong-final {
+            background-image: url('truefalsewrongstrap.png') !important;
+            color: #ffffff !important;
+        }
+
+        .ans-btn.hidden-ans {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .game-board.show-question .question-area {
+            display: block;
+        }
+
+        .game-board.show-question .question-box {
+            animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.animate-hide-question .question-box {
+            transform-origin: left center;
+            animation: shrinkToLeft 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+        }
+
+        .game-board.animate-hide-question .question-content {
+            animation: fadeOutText 0.15s ease-out forwards !important;
+        }
+
+        .game-board.show-question .question-content {
+            animation: fadeInText 0.3s ease-in-out 0.4s forwards;
+        }
+
+        .game-board.show-question .answer-buttons {
+            animation: fadeInText 0.3s ease-in-out 0.7s forwards;
+        }
+
+        .game-board.show-r2-ans .choices-column,
+        .game-board.show-r2-result .choices-column {
+            display: none !important;
+        }
+
+        /* KHUNG ĐÁP ÁN CHO VÒNG 2 */
+        .round2-answer-container {
+            display: none;
+            position: absolute;
+            top: 159px;
+            width: 660px;
+            height: 98px;
+            box-sizing: border-box;
+        }
+
+        .round2-answer-box {
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            transform: scaleX(0);
+            transform-origin: center center;
+        }
+
+        .round2-answer-text {
+            color: #000000;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            padding: 20px;
+            text-transform: uppercase;
+        }
+
+        .game-board.show-r2-ans .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.show-r2-ans .round2-answer-box {
+            background-image: url('Whitebar2.png');
+            animation: stretchFromCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-r2-ans .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.3s forwards;
+        }
+
+        .game-board.hide-r2-ans-center .round2-answer-box {
+            animation: shrinkToCenter 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+        }
+
+        .game-board.hide-r2-ans-center .round2-answer-text {
+            animation: fadeOutText 0.1s ease-out forwards !important;
+        }
+
+        .game-board.show-r2-result .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.show-r2-result .round2-answer-box {
+            animation: stretchFromCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-r2-result .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.3s forwards;
+        }
+
+        @keyframes stretchAcross {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes shrinkToLeft {
+            0% {
+                transform: scaleX(1);
+            }
+
+            100% {
+                transform: scaleX(0);
+            }
+        }
+
+        @keyframes stretchFromCenter {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes shrinkToCenter {
+            0% {
+                transform: scaleX(1);
+            }
+
+            100% {
+                transform: scaleX(0);
+            }
+        }
+
+        @keyframes fadeInText {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOutText {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* BÀN ĐIỀU KHIỂN */
+        .controls-panel {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 780px;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            height: 38px;
+            padding: 0 12px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+            background-color: #333;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: orange !important;
+            color: white !important;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ĐỊNH DẠNG MÀU NÚT VÒNG 1 VÀ VÒNG 2 */
+        .btn-round-toggle {
+            background-color: blue !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+            font-weight: bold !important;
+            font-size: 14px;
+            padding: 0 20px;
+        }
+
+        .btn-round-toggle.active-round {
+            background-color: #800080 !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+        }
+
+        .btn-view {
+            background-color: blue;
+        }
+
+        .btn-open {
+            background-color: green;
+        }
+
+        .btn-close {
+            background-color: red;
+        }
+
+        .btn-reset {
+            background-color: purple;
+        }
+
+        .btn-excel {
+            background-color: purple;
+            font-weight: bold;
+            border-color: #fff;
+        }
+
+        .btn-result,
+        .btn-action-yellow {
+            background-color: yellow !important;
+            color: #000000 !important;
+            border-color: #000000 !important;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        /* Ẩn hiện các cụm nút dựa theo vòng chơi */
+        .round1-ctrl {
+            display: inline-block;
+        }
+
+        .round2-ctrl {
+            display: none;
+        }
+
+        .game-board.round-2-mode .round1-ctrl {
+            display: none !important;
+        }
+
+        .game-board.round-2-mode .round2-ctrl {
+            display: inline-block !important;
+        }
+
+        /* POPUP THÔNG BÁO */
+        .game-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .game-popup-box {
+            background: #ffffff;
+            border: 3px solid #ff00ff;
+            border-radius: 12px;
+            padding: 25px 40px;
+            min-width: 320px;
+            max-width: 450px;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+            animation: popupScaleUp 0.25s ease-out forwards;
+        }
+
+        .game-popup-msg {
+            color: #333333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .game-popup-btn {
+            background-color: #ff00ff;
+            color: #ffffff;
+            border: none;
+            padding: 8px 25px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .game-popup-btn:hover {
+            background-color: orange;
+        }
+
+        /* POPUP NHẬP ĐÁP ÁN THÍ SINH VÒNG 2 */
+        .input-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .input-popup-box {
+            background: #ffffff;
+            border: 4px solid blue;
+            border-radius: 12px;
+            padding: 25px;
+            width: 400px;
+            font-family: 'Arial', sans-serif;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-popup-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .input-popup-field {
+            margin-bottom: 20px;
+        }
+
+        .input-popup-field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        .input-popup-textbox {
+            width: 100%;
+            height: 40px;
+            box-sizing: border-box;
+            padding: 0 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .input-popup-checkbox-group {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .input-popup-checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .input-popup-checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .input-popup-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+
+        .btn-popup-save {
+            background-color: green !important;
+            color: white !important;
+            font-weight: bold !important;
+            width: 45%;
+            height: 40px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-popup-close {
+            background-color: red !important;
+            color: white !important;
+            font-weight: bold !important;
+            width: 45%;
+            height: 40px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-popup-save:hover,
+        .btn-popup-close:hover {
+            background-color: orange !important;
+        }
+
+        @keyframes popupScaleUp {
+            0% {
+                transform: scale(0.7);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game-board" id="gameBoard">
+        <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+
+        <div class="symbols-row" id="symbolsRow"></div>
+
+        <div class="bottom-area">
+            <div class="money-grid" id="moneyGrid">
+                <div class="money-box" data-original-text="0 $A">0 $A</div>
+                <div class="money-box" data-original-text="25.000 $A">25.000 $A</div>
+                <div class="money-box" data-original-text="50.000 $A">50.000 $A</div>
+                <div class="money-box" data-original-text="75.000 $A">75.000 $A</div>
+                <div class="money-box" data-original-text="75.000 $A">75.000 $A</div>
+                <div class="money-box" data-original-text="75.000 $A">75.000 $A</div>
+                <div class="money-box" data-original-text="100.000 $A">100.000 $A</div>
+                <div class="money-box" data-original-text="100.000 $A">100.000 $A</div>
+                <div class="money-box" data-original-text="100.000 $A">100.000 $A</div>
+                <div class="money-box" data-original-text="150.000 $A">150.000 $A</div>
+                <div class="money-box" data-original-text="250.000 $A">250.000 $A</div>
+                <div class="money-box" data-original-text="500.000 $A">500.000 $A</div>
+            </div>
+
+            <div class="topic-container" id="topicContainer">
+                <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
+            </div>
+
+            <div class="choices-column" id="choicesColumn">
+                <div class="choice-box" data-choice="A" id="choiceA">
+                    <div class="choice-text">A</div>
+                </div>
+                <div class="choice-box" data-choice="B" id="choiceB">
+                    <div class="choice-text">B</div>
+                </div>
+                <div class="choice-box" data-choice="C" id="choiceC">
+                    <div class="choice-text">C</div>
+                </div>
+            </div>
+
+            <div class="question-area" id="questionArea">
+                <div class="question-box" id="questionBox">
+                    <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
+                </div>
+                <div class="answer-buttons" id="answerButtons">
+                    <div class="ans-btn" id="trueBtn">ĐÚNG</div>
+                    <div class="ans-btn" id="falseBtn">SAI</div>
+                </div>
+            </div>
+
+            <div class="round2-answer-container" id="round2AnswerContainer">
+                <div class="round2-answer-box" id="round2AnswerBox">
+                    <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="controls-row">
+                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
+                <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-view" onclick="showTopicScreen()">HIỆN CHỦ ĐỀ</button>
+                <button class="btn btn-view" onclick="showChoicesScreen()">HIỆN A, B, C</button>
+                <button class="btn btn-reset" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
+                <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
+                <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcel(event)">
+            </div>
+
+            <div class="controls-row" id="adminActionRow">
+                <button class="btn btn-open" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
+                <button class="btn btn-open" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
+                <button class="btn btn-open" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
+
+                <button class="btn btn-action-yellow round1-ctrl" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
+                <button class="btn btn-action-yellow round1-ctrl" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
+                <button class="btn btn-result round1-ctrl" onclick="revealResultRound1()">BẤM KẾT QUẢ</button>
+
+                <button class="btn btn-result round2-ctrl" onclick="openInputPopup()">NHẬP ĐÁP ÁN</button>
+                <button class="btn btn-result round2-ctrl" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN</button>
+                <button class="btn btn-result round2-ctrl" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ</button>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
+                <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
+                <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-popup-overlay" id="gamePopupOverlay">
+        <div class="game-popup-box">
+            <div class="game-popup-msg" id="gamePopupMsg">Thông báo hệ thống</div>
+            <button class="game-popup-btn" onclick="closePopup()">ĐÓNG</button>
+        </div>
+    </div>
+
+    <div class="input-popup-overlay" id="inputPopupOverlay">
+        <div class="input-popup-box">
+            <div class="input-popup-title" id="inputPopupTitle">Nhập Đáp Án - Câu A</div>
+            <div class="input-popup-field">
+                <label>Câu trả lời của thí sinh:</label>
+                <input type="text" id="popupCandidateAns" class="input-popup-textbox" placeholder="Nhập chuỗi đáp án...">
+            </div>
+            <div class="input-popup-field">
+                <label style="text-align: center;">Đánh giá kết quả:</label>
+                <div class="input-popup-checkbox-group">
+                    <label><input type="checkbox" id="chkCorrect" onchange="togglePopupCheckbox(true)"> ĐÚNG</label>
+                    <label><input type="checkbox" id="chkWrong" onchange="togglePopupCheckbox(false)"> SAI</label>
+                </div>
+            </div>
+            <div class="input-popup-actions">
+                <button class="btn-popup-save" onclick="savePopupData()">LƯU</button>
+                <button class="btn-popup-close" onclick="closeInputPopup()">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentActiveRound = 1;
+        let round1TopicsData = [];
+        let round2TopicsData = [];
+        let currentRoundIndexR1 = 0;
+        let currentRoundIndexR2 = 0;
+        let popupTimer = null;
+
+        let questionData = {
+            'A': { text: 'Câu hỏi mẫu A', correct: true, excelAnsRaw: '' },
+            'B': { text: 'Câu hỏi mẫu B', correct: false, excelAnsRaw: '' },
+            'C': { text: 'Câu hỏi mẫu C', correct: true, excelAnsRaw: '' }
+        };
+
+        let r2SavedAnswers = {
+            'A': { text: '', isCorrect: true },
+            'B': { text: '', isCorrect: true },
+            'C': { text: '', isCorrect: true }
+        };
+
+        let currentlyActiveChoice = null;
+        let selectedStatusAdmin = null;
+        let globalTotalPrize = 0;
+        let hasRevealedResultInRound = false;
+
+        let defaultLayoutV1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
+        let defaultLayoutV2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+
+        let currentMoneyLayoutV1 = [...defaultLayoutV1];
+        let currentMoneyLayoutV2 = [...defaultLayoutV2];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderSymbolsRow();
+            setupMoneyAndSymbols();
+        });
+
+        function showPopup(message) {
+            if (popupTimer) clearTimeout(popupTimer);
+            document.getElementById('gamePopupMsg').innerText = message;
+            document.getElementById('gamePopupOverlay').style.display = 'flex';
+            popupTimer = setTimeout(() => { closePopup(); }, 2500);
+        }
+
+        function closePopup() {
+            document.getElementById('gamePopupOverlay').style.display = 'none';
+            if (popupTimer) clearTimeout(popupTimer);
+        }
+
+        function renderSymbolsRow() {
+            const container = document.getElementById('symbolsRow');
+            container.innerHTML = '';
+
+            if (currentActiveRound === 1) {
+                for (let i = 0; i < 4; i++) container.innerHTML += `<div class="symbol-box plus-type" data-sign="+"><span>+</span></div>`;
+                for (let i = 0; i < 4; i++) container.innerHTML += `<div class="symbol-box minus-type minus" data-sign="-"><span>-</span></div>`;
+            } else {
+                for (let i = 0; i < 4; i++) container.innerHTML += `<div class="symbol-box plus-type" data-sign="*"><span>×</span></div>`;
+                for (let i = 0; i < 4; i++) container.innerHTML += `<div class="symbol-box minus-type divide" data-sign="/"><span>÷</span></div>`;
+            }
+        }
+
+        function setupMoneyAndSymbols() {
+            const moneyBoxes = document.querySelectorAll('.money-box');
+            const symbolBoxes = document.querySelectorAll('.symbol-box');
+
+            moneyBoxes.forEach((box, index) => { box.style.animationDelay = `${index * 0.03}s`; });
+            moneyBoxes.forEach(box => {
+                box.onclick = () => {
+                    if (box.classList.contains('closed')) return;
+                    moneyBoxes.forEach(b => b.classList.remove('selected'));
+                    box.classList.add('selected');
+                };
+            });
+
+            symbolBoxes.forEach(box => {
+                box.onclick = () => {
+                    if (box.classList.contains('closed')) return;
+                    symbolBoxes.forEach(b => b.classList.remove('selected'));
+                    box.classList.add('selected');
+                };
+            });
+        }
+
+        function switchRound(roundNum) {
+            currentActiveRound = roundNum;
+            const board = document.getElementById('gameBoard');
+
+            document.getElementById('btnRound1').classList.toggle('active-round', roundNum === 1);
+            document.getElementById('btnRound2').classList.toggle('active-round', roundNum === 2);
+
+            if (roundNum === 2) {
+                board.classList.add('round-2-mode');
+                const moneyBoxes = document.querySelectorAll('.money-box');
+                moneyBoxes.forEach((box, idx) => {
+                    let val = currentMoneyLayoutV2[idx] || "1";
+                    box.setAttribute('data-original-text', val);
+                    box.innerText = val;
+                    box.className = "money-box";
+                });
+            } else {
+                board.classList.remove('round-2-mode');
+                const moneyBoxes = document.querySelectorAll('.money-box');
+                moneyBoxes.forEach((box, idx) => {
+                    let val = currentMoneyLayoutV1[idx] || "0 $A";
+                    box.setAttribute('data-original-text', val);
+                    box.innerText = val;
+                    box.className = "money-box";
+                });
+            }
+
+            backToMoneyGrid();
+            renderSymbolsRow();
+            setupMoneyAndSymbols();
+            loadRoundDataForCurrentState();
+        }
+
+        function loadRoundDataForCurrentState() {
+            let targetList = (currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
+            let targetIdx = (currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
+
+            if (targetList.length === 0 || targetIdx >= targetList.length) return;
+
+            const round = targetList[targetIdx];
+            document.getElementById('topicText').innerText = round.topic.toUpperCase();
+            questionData['A'] = round.A;
+            questionData['B'] = round.B;
+            questionData['C'] = round.C;
+
+            document.querySelectorAll('.choice-box').forEach(box => box.classList.remove('used'));
+            hasRevealedResultInRound = false;
+
+            r2SavedAnswers = {
+                'A': { text: '', isCorrect: true },
+                'B': { text: '', isCorrect: true },
+                'C': { text: '', isCorrect: true }
+            };
+        }
+
+        function showTopicScreen() {
+            let targetList = (currentActiveRound === 1) ? round1TopicsData : round2TopicsData;
+            let targetIdx = (currentActiveRound === 1) ? currentRoundIndexR1 : currentRoundIndexR2;
+
+            if (hasRevealedResultInRound) {
+                if (targetIdx < targetList.length - 1) {
+                    if (currentActiveRound === 1) currentRoundIndexR1++; else currentRoundIndexR2++;
+                    loadRoundDataForCurrentState();
+                } else if (targetList.length > 0) {
+                    showPopup("Đã hoàn thành hết tất cả các chủ đề câu hỏi của Vòng này!");
+                }
+            } else {
+                if (targetList.length > 0) {
+                    loadRoundDataForCurrentState();
+                }
+            }
+
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.classList.add('hide-money');
+            gameBoard.classList.add('show-topic');
+        }
+
+        function showChoicesScreen() {
+            const gameBoard = document.getElementById('gameBoard');
+            if (!gameBoard.classList.contains('show-topic')) return;
+            gameBoard.classList.add('show-choices');
+
+            const choiceBoxes = document.querySelectorAll('.choice-box');
+            const choiceTexts = document.querySelectorAll('.choice-text');
+            choiceBoxes.forEach((box, index) => { box.style.animationDelay = `${index * 0.12}s`; });
+            choiceTexts.forEach((text, index) => { text.style.animationDelay = `${(index * 0.12) + 0.08}s`; });
+        }
+
+        function openQuestion(choice) {
+            const gameBoard = document.getElementById('gameBoard');
+            const targetBox = document.getElementById(`choice${choice}`);
+            if (targetBox.classList.contains('used')) return;
+
+            currentlyActiveChoice = choice;
+            selectedStatusAdmin = null;
+
+            gameBoard.classList.remove('show-r2-ans', 'hide-r2-ans-center', 'show-r2-result', 'animate-hide-question');
+
+            const trueBtn = document.getElementById('trueBtn');
+            const falseBtn = document.getElementById('falseBtn');
+            trueBtn.className = "ans-btn";
+            falseBtn.className = "ans-btn";
+
+            const questionBox = document.getElementById('questionBox');
+            document.getElementById('questionContent').innerText = questionData[choice].text;
+            questionBox.style.backgroundImage = `url('box${choice}.png')`;
+
+            gameBoard.classList.remove('show-question');
+            void questionBox.offsetWidth;
+            gameBoard.classList.add('show-question');
+        }
+
+        function selectAnswerAdmin(isTrueSelected) {
+            if (currentActiveRound === 2) return;
+            if (!currentlyActiveChoice) {
+                showPopup("Vui lòng mở câu hỏi trước khi chọn!");
+                return;
+            }
+            selectedStatusAdmin = isTrueSelected;
+
+            const trueBtn = document.getElementById('trueBtn');
+            const falseBtn = document.getElementById('falseBtn');
+            trueBtn.className = "ans-btn";
+            falseBtn.className = "ans-btn";
+
+            if (isTrueSelected) {
+                trueBtn.classList.add('chosen');
+                falseBtn.classList.add('hidden-ans');
+            } else {
+                falseBtn.classList.add('chosen');
+                trueBtn.classList.add('hidden-ans');
+            }
+        }
+
+        function revealResultRound1() {
+            if (currentActiveRound === 2) return;
+            if (!currentlyActiveChoice) return;
+            if (selectedStatusAdmin === null) {
+                showPopup("Chưa chọn phương án trả lời (ĐÚNG/SAI)!");
+                return;
+            }
+
+            hasRevealedResultInRound = true;
+            const correctAns = questionData[currentlyActiveChoice].correct;
+            const trueBtn = document.getElementById('trueBtn');
+            const falseBtn = document.getElementById('falseBtn');
+
+            if (selectedStatusAdmin === true) {
+                trueBtn.classList.remove('chosen');
+                if (correctAns === true) trueBtn.classList.add('correct-final');
+                else trueBtn.classList.add('wrong-final');
+            } else {
+                falseBtn.classList.remove('chosen');
+                if (correctAns === false) falseBtn.classList.add('correct-final');
+                else falseBtn.classList.add('wrong-final');
+            }
+        }
+
+        function openInputPopup() {
+            if (!currentlyActiveChoice) {
+                showPopup("Vui lòng mở một câu hỏi (A, B, C) trước khi nhập đáp án!");
+                return;
+            }
+            document.getElementById('inputPopupTitle').innerText = `Nhập Đáp Án - Câu ${currentlyActiveChoice}`;
+
+            const cache = r2SavedAnswers[currentlyActiveChoice];
+            document.getElementById('popupCandidateAns').value = cache.text;
+            document.getElementById('chkCorrect').checked = cache.isCorrect;
+            document.getElementById('chkWrong').checked = !cache.isCorrect;
+
+            document.getElementById('inputPopupOverlay').style.display = 'flex';
+        }
+
+        function togglePopupCheckbox(isCorrectClicked) {
+            if (isCorrectClicked) document.getElementById('chkWrong').checked = false;
+            else document.getElementById('chkCorrect').checked = false;
+        }
+
+        function savePopupData() {
+            const textVal = document.getElementById('popupCandidateAns').value.trim();
+            const isCorrectChecked = document.getElementById('chkCorrect').checked;
+            const isWrongChecked = document.getElementById('chkWrong').checked;
+
+            if (!isCorrectChecked && !isWrongChecked) {
+                return;
+            }
+
+            r2SavedAnswers[currentlyActiveChoice].text = textVal;
+            r2SavedAnswers[currentlyActiveChoice].isCorrect = isCorrectChecked;
+
+            closeInputPopup();
+            showPopup(`Đã lưu dữ liệu đáp án câu ${currentlyActiveChoice}!`);
+        }
+
+        function closeInputPopup() {
+            document.getElementById('inputPopupOverlay').style.display = 'none';
+        }
+
+        function revealR2AnswerGraphic() {
+            if (!currentlyActiveChoice) return;
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.classList.add('animate-hide-question');
+
+            setTimeout(() => {
+                gameBoard.classList.remove('show-question', 'animate-hide-question');
+                const currentCandidateAnsText = r2SavedAnswers[currentlyActiveChoice].text || "(Trống)";
+                const ansTextNode = document.getElementById('round2AnswerText');
+                ansTextNode.innerText = currentCandidateAnsText;
+
+                ansTextNode.style.color = "#000000";
+                document.getElementById('round2AnswerBox').style.backgroundImage = "url('Whitebar2.png')";
+                gameBoard.classList.add('show-r2-ans');
+            }, 300);
+        }
+
+        function revealR2ResultGraphic() {
+            if (!currentlyActiveChoice) return;
+            const gameBoard = document.getElementById('gameBoard');
+
+            if (!gameBoard.classList.contains('show-r2-ans')) {
+                showPopup("Vui lòng bấm 'HIỆN ĐÁP ÁN' trước khi bấm kết quả!");
+                return;
+            }
+            gameBoard.classList.add('hide-r2-ans-center');
+
+            setTimeout(() => {
+                gameBoard.classList.remove('show-r2-ans', 'hide-r2-ans-center');
+                const cacheData = r2SavedAnswers[currentlyActiveChoice];
+                const ansBox = document.getElementById('round2AnswerBox');
+                const ansTextNode = document.getElementById('round2AnswerText');
+
+                if (cacheData.isCorrect) {
+                    ansBox.style.backgroundImage = "url('RightAns.png')";
+                    ansTextNode.innerText = cacheData.text || "(Trống)";
+                } else {
+                    ansBox.style.backgroundImage = "url('WrongAns.png')";
+                    let excelRightAnsStr = questionData[currentlyActiveChoice].excelAnsRaw || "Không có đáp án";
+                    ansTextNode.innerText = excelRightAnsStr;
+                }
+                hasRevealedResultInRound = true;
+                ansTextNode.style.color = "#000000";
+                gameBoard.classList.add('show-r2-result');
+            }, 250);
+        }
+
+        function calculateFromSelection() {
+            const selectedMoneyBox = document.querySelector('.money-box.selected');
+            const selectedSymbolBox = document.querySelector('.symbol-box.selected');
+
+            if (selectedMoneyBox && selectedSymbolBox) {
+                const rawText = selectedMoneyBox.getAttribute('data-original-text') || "0";
+                const isNegative = rawText.includes('-');
+                const numbersOnly = rawText.replace(/[^0-9]/g, '');
+                let moneyValue = parseInt(numbersOnly, 10) || 0;
+                if (isNegative) moneyValue = -moneyValue;
+
+                const sign = selectedSymbolBox.getAttribute('data-sign');
+
+                if (currentActiveRound === 1) {
+                    if (sign === '+') {
+                        globalTotalPrize += moneyValue;
+                    } else if (sign === '-') {
+                        globalTotalPrize -= moneyValue;
+                    }
+                } else {
+                    if (sign === '*') {
+                        globalTotalPrize = globalTotalPrize * moneyValue;
+                    } else if (sign === '/') {
+                        if (moneyValue !== 0) {
+                            globalTotalPrize = Math.round(globalTotalPrize / moneyValue);
+                        }
+                    }
+                }
+
+                // Định dạng hiển thị chuỗi số (hỗ trợ cả dấu trừ nếu tổng tiền âm)
+                let formattedPrize = globalTotalPrize.toLocaleString('vi-VN') + " $A";
+                document.getElementById('totalPrize').innerText = formattedPrize;
+                
+                selectedMoneyBox.classList.remove('selected');
+                selectedMoneyBox.classList.add('closed');
+                selectedSymbolBox.classList.remove('selected');
+                selectedSymbolBox.classList.add('closed');
+            }
+        }
+
+        function closeAndMarkUsed(choice) {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.classList.remove('show-question', 'show-r2-ans', 'show-r2-result', 'animate-hide-question', 'hide-r2-ans-center');
+            document.getElementById(`choice${choice}`).classList.add('used');
+            if (currentlyActiveChoice === choice) {
+                currentlyActiveChoice = null;
+                selectedStatusAdmin = null;
+            }
+        }
+
+        function backToMoneyGrid() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.classList.remove('hide-money', 'show-topic', 'show-choices', 'show-question', 'show-r2-ans', 'show-r2-result', 'animate-hide-question', 'hide-r2-ans-center');
+            currentlyActiveChoice = null;
+            selectedStatusAdmin = null;
+        }
+
+        function triggerExcelInput() {
+            document.getElementById('excelInput').click();
+        }
+
+        function handleExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                round1TopicsData = [];
+                round2TopicsData = [];
+
+                // 1. QUÉT DỮ LIỆU VÒNG 1
+                const findV1Name = workbook.SheetNames.find(name => name.trim() === "Vòng 1") || workbook.SheetNames[0];
+                if (findV1Name) {
+                    const wsV1 = workbook.Sheets[findV1Name];
+                    const jsonV1 = XLSX.utils.sheet_to_json(wsV1, { header: 1, defval: "" });
+
+                    if (jsonV1.length > 0) {
+                        let leftV1 = [], rightV1 = [];
+                        for (let r = 1; r <= 6; r++) {
+                            let rowArr = jsonV1[r - 1] || [];
+                            let textI = rowArr[8] !== undefined && String(rowArr[8]).trim() !== "" ? String(rowArr[8]).trim() : defaultLayoutV1[r - 1];
+                            let textJ = rowArr[9] !== undefined && String(rowArr[9]).trim() !== "" ? String(rowArr[9]).trim() : defaultLayoutV1[r + 5];
+                            leftV1.push(textI);
+                            rightV1.push(textJ);
+                        }
+                        currentMoneyLayoutV1 = leftV1.concat(rightV1);
+
+                        for (let i = 1; i < jsonV1.length; i++) {
+                            const rowData = jsonV1[i];
+                            if (!rowData || !rowData[0] || String(rowData[0]).trim() === "" || String(rowData[0]).trim() === "Chủ đề") continue;
+
+                            round1TopicsData.push({
+                                topic: String(rowData[0]).trim(),
+                                A: { text: rowData[1] || "Trống", correct: String(rowData[4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(rowData[4]).trim() },
+                                B: { text: rowData[2] || "Trống", correct: String(rowData[5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(rowData[5]).trim() },
+                                C: { text: rowData[3] || "Trống", correct: String(rowData[6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(rowData[6]).trim() }
+                            });
+                        }
+                    }
+                }
+
+                // 2. QUÉT DỮ LIỆU VÒNG 2
+                const findV2Name = workbook.SheetNames.find(name => name.trim() === "Vòng 2");
+                if (findV2Name) {
+                    const wsV2 = workbook.Sheets[findV2Name];
+                    const jsonV2 = XLSX.utils.sheet_to_json(wsV2, { header: 1, defval: "" });
+
+                    if (jsonV2.length > 0) {
+                        let leftV2 = [], rightV2 = [];
+                        for (let r = 1; r <= 6; r++) {
+                            let rowArr = jsonV2[r - 1] || [];
+                            let textI = rowArr[8] !== undefined && String(rowArr[8]).trim() !== "" ? String(rowArr[8]).trim() : defaultLayoutV2[r - 1];
+                            let textJ = rowArr[9] !== undefined && String(rowArr[9]).trim() !== "" ? String(rowArr[9]).trim() : defaultLayoutV2[r + 5];
+                            leftV2.push(textI);
+                            rightV2.push(textJ);
+                        }
+                        currentMoneyLayoutV2 = leftV2.concat(rightV2);
+
+                        for (let i = 1; i < jsonV2.length; i++) {
+                            const rowData = jsonV2[i];
+                            if (!rowData || !rowData[0] || String(rowData[0]).trim() === "" || String(rowData[0]).trim() === "Chủ đề") continue;
+
+                            round2TopicsData.push({
+                                topic: String(rowData[0]).trim(),
+                                A: { text: rowData[1] || "Trống", correct: true, excelAnsRaw: String(rowData[4]).trim() },
+                                B: { text: rowData[2] || "Trống", correct: true, excelAnsRaw: String(rowData[5]).trim() },
+                                C: { text: rowData[3] || "Trống", correct: true, excelAnsRaw: String(rowData[6]).trim() }
+                            });
+                        }
+                    }
+                }
+
+                currentRoundIndexR1 = 0;
+                currentRoundIndexR2 = 0;
+                switchRound(currentActiveRound);
+
+                showPopup(`NẠP ĐỀ THÀNH CÔNG!\n- Vòng 1: Đã nhận ${round1TopicsData.length} chủ đề.\n- Vòng 2: Đã nhận ${round2TopicsData.length} chủ đề.`);
+                event.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+
+</html>

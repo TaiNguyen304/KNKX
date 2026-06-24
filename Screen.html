@@ -1,121 +1,478 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Screen</title>
     <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
     <style>
+        * {
+            font-weight: bold !important;
+        }
+
         body {
-            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; background-image: url('bg1.png'); background-size: cover; background-position: center;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: url('bg1.png');
+            background-size: cover;
+            background-position: center;
         }
-        .game-board { display: flex; flex-direction: column; align-items: center; font-family: 'Arial', sans-serif; gap: 10px; }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            gap: 10px;
+        }
+
         .main-prize {
-            background-image: url('YellowStrap.png'); background-size: 100% 100%;
-            width: 660px; height: 85px; display: flex; justify-content: center; align-items: center;
-            color: #000; font-size: 42px; font-weight: bold;
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            width: 660px;
+            height: 85px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 42px;
         }
-        .symbols-row { display: flex; width: 660px; gap: 4px; margin-bottom: 5px; }
+
+        .symbols-row {
+            display: flex;
+            width: 660px;
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+
         .symbol-box {
-            background-image: url('SymbolStrap.png'); background-size: 100% 100%;
-            flex: 1; height: 55px; display: flex; justify-content: center; align-items: center;
-            font-size: 36px; font-weight: bold; color: #000;
+            background-image: url('SymbolStrap.png');
+            background-size: 100% 100%;
+            flex: 1;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            color: #000;
         }
-        .game-board.round-2-mode .symbol-box { display: flex; justify-content: center; align-items: center; line-height: 1; }
-        .symbol-box.selected { background-image: url('SymbolChooseStrap.png') !important; }
-        .symbol-box.closed { background-image: url('SymbolCloseStrap.png') !important; color: transparent !important; }
-        
-        .bottom-area { position: relative; width: 660px; height: 400px; }
+
+        .game-board.round-2-mode .symbol-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .symbol-box.selected {
+            background-image: url('SymbolChooseStrap.png') !important;
+        }
+
+        .symbol-box.closed {
+            background-image: url('SymbolCloseStrap.png') !important;
+            color: transparent !important;
+        }
+
+        .bottom-area {
+            position: relative;
+            width: 660px;
+            height: 400px;
+        }
+
         .money-grid {
-            display: grid; grid-template-columns: repeat(2, 325px); grid-gap: 8px 10px;
-            grid-auto-flow: column; grid-template-rows: repeat(6, 60px); width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 325px);
+            grid-gap: 8px 10px;
+            grid-auto-flow: column;
+            grid-template-rows: repeat(6, 60px);
+            width: 100%;
+            height: 100%;
         }
+
         .money-box {
-            background-image: url('YellowStrap.png'); background-size: 100% 100%; height: 60px;
-            display: flex; justify-content: center; align-items: center; color: #000; font-size: 26px; font-weight: bold;
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 26px;
         }
-        .money-box.selected { background-image: url('ChooseStrap.png') !important; }
-        .money-box.closed { background-image: url('CloseStrap.png') !important; color: transparent !important; }
-        .game-board.hide-money #moneyGrid { display: none !important; }
+
+        .money-box.selected {
+            background-image: url('ChooseStrap.png') !important;
+        }
+
+        .money-box.closed {
+            background-image: url('CloseStrap.png') !important;
+            color: transparent !important;
+        }
+
+        .game-board.hide-money #moneyGrid {
+            display: none !important;
+        }
 
         .topic-container {
-            display: none; background-image: url('YellowStrap.png'); background-size: 100% 100%;
-            width: 660px; height: 65px; justify-content: center; align-items: center; position: absolute; top: 0; left: 0;
-            transform: scaleX(0); transform-origin: center;
+            display: none;
+            background-image: url('YellowStrap.png');
+            background-size: 100% 100%;
+            width: 660px;
+            height: 65px;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: scaleX(0);
+            transform-origin: center;
         }
-        .topic-text { color: #000; font-size: 28px; font-weight: bold; opacity: 0; }
-        .choices-column { display: none; flex-direction: column; gap: 12px; position: absolute; top: 77px; left: 0; z-index: 10; }
+
+        .topic-text {
+            color: #000;
+            font-size: 28px;
+            opacity: 0;
+        }
+
+        .choices-column {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            position: absolute;
+            top: 77px;
+            left: 0;
+            z-index: 10;
+        }
+
         .choice-box {
-            background-image: url('sss.png'); background-size: 100% 100%; width: 75px; height: 75px;
-            display: flex; justify-content: center; align-items: center; transform: scaleX(0); transform-origin: center;
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            width: 75px;
+            height: 75px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: scaleX(0);
+            transform-origin: center;
         }
-        .choice-box.used { background-image: url('bbb.png') !important; }
-        .choice-text { color: #000; font-size: 44px; font-weight: bold; opacity: 0; }
 
-        .game-board.show-topic .topic-container { display: flex; animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .game-board.show-topic .topic-text { animation: fadeInText 0.2s ease-in-out 0.3s forwards; }
-        .game-board.show-choices .choices-column { display: flex; }
-        .game-board.show-choices .choice-box { animation: stretchAcross 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .game-board.show-choices .choice-text { animation: fadeInText 0.2s ease-in-out forwards; }
+        .choice-box.used {
+            background-image: url('bbb.png') !important;
+        }
 
-        .question-area { display: none; position: absolute; top: 77px; left: 85px; width: 575px; height: 249px; }
+        .choice-text {
+            color: #000;
+            font-size: 44px;
+            opacity: 0;
+        }
+
+        .game-board.show-topic .topic-container {
+            display: flex;
+            animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-topic .topic-text {
+            animation: fadeInText 0.2s ease-in-out 0.3s forwards;
+        }
+
+        .game-board.show-choices .choices-column {
+            display: flex;
+        }
+
+        .game-board.show-choices .choice-box {
+            animation: stretchAcross 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.show-choices .choice-text {
+            animation: fadeInText 0.2s ease-in-out forwards;
+        }
+
+        .question-area {
+            display: none;
+            position: absolute;
+            top: 77px;
+            left: 85px;
+            width: 575px;
+            height: 249px;
+        }
+
         .question-box {
-            width: 100%; height: 100%; background-size: 100% 100%; display: flex; align-items: center;
-            padding: 20px 145px 20px 30px; box-sizing: border-box; transform: scaleX(0); transform-origin: left center;
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            display: flex;
+            align-items: center;
+            padding: 20px 145px 20px 30px;
+            box-sizing: border-box;
+            transform: scaleX(0);
+            transform-origin: left center;
         }
-        .game-board.round-2-mode .question-box { padding: 20px 30px 20px 30px !important; }
-        .question-content { color: #000; font-size: 22px; font-weight: bold; line-height: 1.4; opacity: 0; }
-        .answer-buttons { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; opacity: 0; }
-        .game-board.round-2-mode .answer-buttons { display: none !important; }
-        
+
+        .game-board.round-2-mode .question-box {
+            padding: 20px 30px 20px 30px !important;
+            transform-origin: left center;
+        }
+
+        .question-content {
+            color: #000;
+            font-size: 22px;
+            line-height: 1.4;
+            opacity: 0;
+        }
+
+        .answer-buttons {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            opacity: 0;
+        }
+
+        .game-board.round-2-mode .answer-buttons {
+            display: none !important;
+        }
+
         .ans-btn {
-            background-image: url('sss.png'); background-size: 100% 100%; width: 100px; height: 80px;
-            display: flex; justify-content: center; align-items: center; color: #000; font-size: 24px; font-weight: bold;
+            background-image: url('sss.png');
+            background-size: 100% 100%;
+            width: 100px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 24px;
         }
-        .ans-btn.chosen { background-image: url('true false choose strap.png') !important; color: #fff !important; }
-        .ans-btn.correct-final { background-image: url('truefalseright strap.png') !important; color: #fff !important; }
-        .ans-btn.wrong-final { background-image: url('truefalsewrongstrap.png') !important; color: #fff !important; }
-        .ans-btn.hidden-ans { opacity: 0 !important; }
-        .game-board.show-question .question-area { display: block; }
-        .game-board.show-question .question-box { animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .game-board.show-question .question-content { animation: fadeInText 0.3s ease-in-out 0.4s forwards; }
-        .game-board.show-question .answer-buttons { animation: fadeInText 0.3s ease-in-out 0.7s forwards; }
 
-        .round2-answer-container { display: none; position: absolute; top: 159px; width: 660px; height: 98px; }
-        .round2-answer-box { width: 100%; height: 100%; background-size: 100% 100%; display: flex; justify-content: center; align-items: center; transform: scaleX(0); transform-origin: center; }
-        .round2-answer-text { color: #000; font-size: 32px; font-weight: bold; text-align: center; opacity: 0; text-transform: uppercase; }
-        
-        .game-board.show-r2-ans .round2-answer-container, .game-board.show-r2-result .round2-answer-container { display: block; }
-        .game-board.show-r2-ans .round2-answer-box, .game-board.show-r2-result .round2-answer-box { animation: stretchFromCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .game-board.show-r2-ans .round2-answer-text, .game-board.show-r2-result .round2-answer-text { animation: fadeInText 0.15s ease-in-out 0.3s forwards; }
-        .game-board.show-r2-ans .choices-column, .game-board.show-r2-result .choices-column { display: none !important; }
+        .ans-btn.chosen {
+            background-image: url('true false choose strap.png') !important;
+            color: #fff !important;
+        }
 
-        @keyframes stretchAcross { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-        @keyframes stretchFromCenter { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-        @keyframes fadeInText { 0% { opacity: 0; } 100% { opacity: 1; } }
+        .ans-btn.correct-final {
+            background-image: url('truefalseright strap.png') !important;
+            color: #fff !important;
+        }
 
-        /* Hiệu ứng xuất hiện cho từng ô tiền */
+        .ans-btn.wrong-final {
+            background-image: url('truefalsewrongstrap.png') !important;
+            color: #fff !important;
+        }
+
+        .ans-btn.hidden-ans {
+            opacity: 0 !important;
+        }
+
+        .game-board.show-question .question-area {
+            display: block;
+        }
+
+        .game-board.show-question .question-box {
+            animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            transform-origin: left center;
+        }
+
+        .game-board.show-question .question-content {
+            animation: fadeInText 0.3s ease-in-out 0.4s forwards;
+        }
+
+        .game-board.show-question .answer-buttons {
+            animation: fadeInText 0.3s ease-in-out 0.7s forwards;
+        }
+
+        .round2-answer-container {
+            display: none;
+            position: absolute;
+            top: 159px;
+            width: 660px;
+            height: 98px;
+        }
+
+        .round2-answer-box {
+            width: 100%;
+            height: 100%;
+            background-size: 100% 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: scaleX(0);
+            transform-origin: center;
+        }
+
+        .round2-answer-text {
+            color: #000;
+            font-size: 32px;
+            text-align: center;
+            opacity: 0;
+            text-transform: uppercase;
+        }
+
+        @keyframes stretchAcross {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes fadeInText {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes shrinkLeft {
+            0% {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleX(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes stretchFromCenter {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes shrinkToCenter {
+            0% {
+                transform: scaleX(1);
+            }
+
+            100% {
+                transform: scaleX(0);
+            }
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-area {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-box {
+            animation: shrinkLeft 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-content {
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .choices-column {
+            display: none !important;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-box {
+            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.6s forwards;
+        }
+
+        .game-board.round-2-mode.play-close .question-area {
+            display: none;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-box {
+            animation: shrinkToCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+            transform-origin: center !important;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-text {
+            opacity: 0 !important;
+        }
+
+        .game-board.round-2-mode.show-r2-result .question-area {
+            display: none;
+        }
+
+        .game-board.round-2-mode.show-r2-result .choices-column {
+            display: none !important;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-box {
+            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            transform-origin: center !important;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.3s forwards;
+        }
+
         @keyframes fadeInUpMoney {
             0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-} 
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
 
-/* Khi quay lại bảng tiền, mặc định ẩn đi để chuẩn bị chạy animation */
-.money-box-animate {
-    opacity: 0;
-    animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .money-box-animate {
+            opacity: 0;
+            animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Màn hình chờ chiếm Full Screen độc lập */
+        .mhc-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: none;
+            background-image: url('MHC.png');
+            background-size: cover;
+            background-position: center;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
     </style>
 </head>
-<body>
 
-    <div class="game-board" id="gameBoard">
+<body>
+    <div id="mhcOverlay" class="mhc-overlay"></div>
+    <div class="game-board hide-money" id="gameBoard">
         <div class="main-prize" id="totalPrize">0 $A</div>
         <div class="symbols-row" id="symbolsRow"></div>
 
@@ -127,9 +484,15 @@
             </div>
 
             <div class="choices-column" id="choicesColumn">
-                <div class="choice-box" id="choiceA"><div class="choice-text">A</div></div>
-                <div class="choice-box" id="choiceB"><div class="choice-text">B</div></div>
-                <div class="choice-box" id="choiceC"><div class="choice-text">C</div></div>
+                <div class="choice-box" id="choiceA">
+                    <div class="choice-text">A</div>
+                </div>
+                <div class="choice-box" id="choiceB">
+                    <div class="choice-text">B</div>
+                </div>
+                <div class="choice-box" id="choiceC">
+                    <div class="choice-text">C</div>
+                </div>
             </div>
 
             <div class="question-area" id="questionArea">
@@ -161,12 +524,30 @@
     <script>
         const socket = io('https://knkx.onrender.com');
 
-        // Biến cờ theo dõi trạng thái hiển thị bảng tiền trước đó
-        let lastHideMoneyState = null;
+        socket.on('play-sound-client', (data) => {
+            if (data && data.sound) {
+                const audio = new Audio(data.sound);
+                audio.play().catch(err => {
+                    
+                });
+            }
+        });
+        let lastHideMoneyState = true;
 
         socket.on('sync-full-state', (state) => {
+            // --- XỬ LÝ ẨN/HIỆN MÀN HÌNH CHỜ (MHC) ---
+            const mhc = document.getElementById('mhcOverlay');
+            if (mhc) {
+                // Mặc định khi mới bật web (state.showMHC chưa định nghĩa) hoặc khi được set true -> Luôn hiện MHC
+                if (state.showMHC === undefined || state.showMHC === true) {
+                    mhc.style.display = 'flex';
+                } else {
+                    mhc.style.display = 'none';
+                }
+            }
+
+            // --- GIỮ NGUYÊN LOGIC ĐỒNG BỘ CÁC THÀNH PHẦN KHÁC ---
             const board = document.getElementById('gameBoard');
-            
             board.className = "game-board";
             if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
             if (state.displayClasses && state.displayClasses.length > 0) {
@@ -175,34 +556,27 @@
 
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
 
-            // Kiểm tra xem trạng thái "hide-money" hiện tại có đang bật không
             const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
-            
-            // Chỉ kích hoạt hiệu ứng khi: Trước đó bảng tiền ĐANG ẨN (true) và hiện tại QUAY LẠI HIỂN THỊ (false)
             const shouldAnimate = (lastHideMoneyState === true && isCurrentlyHidden === false);
-            
-            // Cập nhật trạng thái cho lần đồng bộ kế tiếp
             lastHideMoneyState = isCurrentlyHidden;
 
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
             const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
-            
+
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
                 box.className = 'money-box';
                 box.innerText = val;
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
-                
+
                 if (shouldAnimate) {
-                    // Ép ô tiền ẩn đi trước khi chạy animation lần lượt
                     box.style.opacity = '0';
                     box.classList.add('money-box-animate');
                     box.style.animationDelay = `${idx * 0.1}s`;
                 }
-                
                 grid.appendChild(box);
             });
 
@@ -210,7 +584,7 @@
             sRow.innerHTML = '';
             const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
             const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
-            
+
             displaySigns.forEach((sign, idx) => {
                 const box = document.createElement('div');
                 box.className = 'symbol-box';
@@ -221,9 +595,9 @@
             });
 
             document.getElementById('topicText').innerText = state.currentRoundData.topic;
-            ['A','B','C'].forEach(ch => {
+            ['A', 'B', 'C'].forEach(ch => {
                 const cBox = document.getElementById(`choice${ch}`);
-                if(state.usedChoices[ch]) cBox.classList.add('used');
+                if (state.usedChoices[ch]) cBox.classList.add('used');
                 else cBox.classList.remove('used');
             });
 
@@ -242,4 +616,5 @@
         });
     </script>
 </body>
+
 </html>

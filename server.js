@@ -59,6 +59,11 @@ io.on('connection', (socket) => {
     // Khi có client kết nối (Screen hoặc Controller), gửi trạng thái hiện tại ngay lập tức
     socket.emit('sync-full-state', gameState);
 
+    socket.on('trigger-sound', (data) => {
+        // Chuyển tiếp lệnh phát âm thanh tới toàn bộ các client (Screen)
+        io.emit('play-sound-client', data);
+    });
+    
     // Lắng nghe sự kiện đồng bộ từ Controller gửi lên
     socket.on('update-game-state', (updatedState) => {
         gameState = { ...gameState, ...updatedState };

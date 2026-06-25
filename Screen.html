@@ -524,21 +524,51 @@
     <script>
         const socket = io('https://knkx.onrender.com');
 
+        // Mảng lưu trữ các đối tượng audio đang được phát để có thể dừng khi có lệnh
+        let activeAudios = [];
+
         socket.on('play-sound-client', (data) => {
             if (data && data.sound) {
+                // NẾU LÀ LỆNH DỪNG ÂM THANH
+                if (data.sound === 'stop_all') {
+                    activeAudios.forEach(audio => {
+                        try {
+                            audio.pause();
+                            audio.currentTime = 0; // Tua về đầu bài
+                        } catch (e) {
+                            console.error("Lỗi khi dừng âm thanh:", e);
+                        }
+                    });
+                    activeAudios = []; // Xóa danh sách quản lý sau khi đã dừng hết
+                    return; // Thoát hàm, không chạy tiếp xuống dưới
+                }
+
+                // NẾU LÀ FILE PHÁT ÂM THANH THÔNG THƯỜNG
                 const audio = new Audio(data.sound);
+
+                // Thêm audio này vào mảng quản lý
+                activeAudios.push(audio);
+
+                // Khi âm thanh chạy xong thì tự động xóa khỏi mảng activeAudios để giải phóng bộ nhớ
+                audio.onended = () => {
+                    activeAudios = activeAudios.filter(a => a !== audio);
+                };
+
                 audio.play().catch(err => {
-                    
+                    console.log("Không thể tự động phát âm thanh do tương tác trình duyệt:", err);
                 });
             }
         });
+
         let lastHideMoneyState = true;
+        let activeDingIndexes = new Set();
+        let currentRenderSession = 0;
 
         socket.on('sync-full-state', (state) => {
+            
             // --- XỬ LÝ ẨN/HIỆN MÀN HÌNH CHỜ (MHC) ---
             const mhc = document.getElementById('mhcOverlay');
             if (mhc) {
-                // Mặc định khi mới bật web (state.showMHC chưa định nghĩa) hoặc khi được set true -> Luôn hiện MHC
                 if (state.showMHC === undefined || state.showMHC === true) {
                     mhc.style.display = 'flex';
                 } else {
@@ -546,7 +576,7 @@
                 }
             }
 
-            // --- GIỮ NGUYÊN LOGIC ĐỒNG BỘ CÁC THÀNH PHẦN KHÁC ---
+            // --- ĐỒNG BỘ CÁC THÀNH PHẦN KHÁC ---
             const board = document.getElementById('gameBoard');
             board.className = "game-board";
             if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
@@ -557,13 +587,26 @@
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
 
             const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
-            const shouldAnimate = (lastHideMoneyState === true && isCurrentlyHidden === false);
+
+            // Nếu bảng tiền bị ẩn đi, hoặc chuyển từ trạng thái ẨN sang HIỆN
+            if (isCurrentlyHidden || (isCurrentlyHidden === false && lastHideMoneyState === true)) {
+                activeDingIndexes.clear();
+                currentRenderSession++; // Tăng phiên làm việc để hủy bỏ các sự kiện âm thanh cũ
+            }
             lastHideMoneyState = isCurrentlyHidden;
+
+            // PHÂN TÍCH HÀNH ĐỘNG ĐỂ QUYẾT ĐỊNH HIỆU ỨNG TRỰC QUAN VÀ ÂM THANH
+            const isResetAction = (state.lastAction === 'reset');
+            const isShowOrBackAction = (state.lastAction === 'show' || state.lastAction === 'back');
+            // ĐIỀU CHỈNH CHÍNH: Chỉ cần bảng tiền KHÔNG ẩn và thuộc hành động show/back là chạy hiệu ứng 12 tiếng ding
+            const shouldAnimate = (!isCurrentlyHidden && isShowOrBackAction);
 
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
             const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+
+            const thisSession = currentRenderSession;
 
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
@@ -572,14 +615,31 @@
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
 
-                if (shouldAnimate) {
-                    box.style.opacity = '0';
+                if (shouldAnimate && !isResetAction) {
+                    // HIỆN LẦN LƯỢT: Áp dụng CSS Animation Delay theo thứ tự ô
                     box.classList.add('money-box-animate');
                     box.style.animationDelay = `${idx * 0.1}s`;
+
+                    // BẮT SỰ KIỆN PHÁT ÂM THANH DING CHO TỪNG Ô
+                    box.addEventListener('animationstart', () => {
+                        // Đảm bảo đúng phiên render hiện tại và ô này chưa từng được phát ding ở lượt mở bảng này
+                        if (thisSession === currentRenderSession && !activeDingIndexes.has(idx)) {
+                            activeDingIndexes.add(idx);
+                            const snd = new Audio('ding.mp3');
+                            snd.play().catch(err => console.log("Trình duyệt chặn phát âm thanh tự động:", err));
+                        }
+                    });
+
+                } else {
+                    // HIỆN ĐỒNG LOẠT: Khi bảng bị ẩn hoặc Reset, hiện ngay lập tức không delay hiệu ứng
+                    box.style.opacity = '1';
+                    box.style.transform = 'none';
+                    box.style.animation = 'none';
                 }
                 grid.appendChild(box);
             });
 
+            // --- ĐỒNG BỘ ĐỀ BÀI VÀ CÁC THÀNH PHẦN KHÁC KHÔNG ĐỔI ---
             const sRow = document.getElementById('symbolsRow');
             sRow.innerHTML = '';
             const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
@@ -594,25 +654,38 @@
                 sRow.appendChild(box);
             });
 
-            document.getElementById('topicText').innerText = state.currentRoundData.topic;
+            if (state.currentRoundData && state.currentRoundData.topic) {
+                document.getElementById('topicText').innerText = state.currentRoundData.topic;
+            } else {
+                document.getElementById('topicText').innerText = '';
+            }
+
             ['A', 'B', 'C'].forEach(ch => {
                 const cBox = document.getElementById(`choice${ch}`);
-                if (state.usedChoices[ch]) cBox.classList.add('used');
-                else cBox.classList.remove('used');
+                if (cBox) {
+                    if (state.usedChoices && state.usedChoices[ch]) cBox.classList.add('used');
+                    else cBox.classList.remove('used');
+                }
             });
 
-            if (state.activeQuestion) {
+            if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
-                document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass;
-                document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass;
+                if (state.round1CtrlState) {
+                    document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'btn-answer';
+                    document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'btn-answer';
+                }
+            } else {
+                document.getElementById('questionContent').innerText = '';
             }
 
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
-            r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage;
-            r2Txt.innerText = state.round2CtrlState.text;
-            r2Txt.style.color = state.round2CtrlState.textColor;
+            if (r2Box && r2Txt && state.round2CtrlState) {
+                r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('bar2.png')";
+                r2Txt.innerText = state.round2CtrlState.text || '';
+                r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+            }
         });
     </script>
 </body>

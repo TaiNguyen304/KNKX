@@ -38,6 +38,7 @@
             padding: 20px;
             border-radius: 12px;
             border: 1px solid #444;
+            margin-bottom: 15px;
         }
 
         .main-prize {
@@ -287,133 +288,34 @@
             text-transform: uppercase;
         }
 
-        @keyframes shrinkLeft {
-            0% {
-                transform: scaleX(1);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scaleX(0);
-                opacity: 0;
-            }
-        }
-
-        @keyframes stretchFromCenter {
-            0% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
-        }
-
-        @keyframes shrinkToCenter {
-            0% {
-                transform: scaleX(1);
-            }
-
-            100% {
-                transform: scaleX(0);
-            }
-        }
-
-        @keyframes fadeInText {
-            0% {
-                opacity: 0;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        .game-board.round-2-mode.show-question .question-box {
-            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: left center;
-        }
-
-        .game-board.round-2-mode.show-question .question-content {
-            animation: fadeInText 0.3s ease-in-out 0.4s forwards;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .question-area {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .question-box {
-            animation: shrinkLeft 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .question-content {
-            opacity: 0;
-            transition: opacity 0.1s;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .choices-column {
-            display: none !important;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-box {
-            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
-            transform: scaleX(0);
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-text {
-            opacity: 0;
-            animation: fadeInText 0.2s ease-in-out 0.6s forwards;
-        }
-
-        .game-board.round-2-mode.play-close .question-area {
-            display: none;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-box {
-            animation: shrinkToCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
-            transform-origin: center !important;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-text {
-            opacity: 0 !important;
-            transition: opacity 0.1s;
-        }
-
-        .game-board.round-2-mode.show-r2-result .question-area {
-            display: none;
-        }
-
-        .game-board.round-2-mode.show-r2-result .choices-column {
-            display: none !important;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-box {
-            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: center !important;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-text {
-            opacity: 0;
-            animation: fadeInText 0.2s ease-in-out 0.3s forwards;
+        /* Khung chứa 2 cụm nút nằm ngang */
+        .panels-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+            width: 1060px;
+            /* 520px * 2 + 20px gap */
+            max-width: 100%;
         }
 
         .controls-panel {
-            margin-top: 15px;
             background: rgba(0, 0, 0, 0.8);
             padding: 15px;
             border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 520px;
+            box-sizing: border-box;
+        }
+
+        .sound-panel {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #800080;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -480,6 +382,29 @@
         .btn-money-ctrl {
             background-color: #ff00ff !important;
             color: #fff !important;
+        }
+
+        .btn-sound {
+            background-color: #800080 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border: 1px solid #fff;
+            height: 40px;
+            min-width: 150px;
+            flex: 1 1 30%;
+        }
+
+        .btn-stop-sound {
+            background-color: #ff0000 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border: 2px solid #fff;
+            height: 45px;
+            width: 100%;
+            font-size: 14px;
+            margin-top: 5px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
         .set-prize-input {
@@ -602,54 +527,93 @@
         </div>
     </div>
 
-    <div class="controls-panel">
-        <div class="controls-row" style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-            <button class="btn btn-round-toggle" style="font-weight: bold !important;" onclick="controlMHC(true)">HIỆN
-                MHC</button>
-            <button class="btn btn-round-toggle" style="font-weight: bold !important;" onclick="controlMHC(false)">ẨN
-                MHC</button>
-            <button class="btn btn-money-ctrl" onclick="moneyGridControl('show')">HIỆN BẢNG TIỀN</button>
-            <button class="btn btn-money-ctrl" onclick="moneyGridControl('hide')">ẨN BẢNG TIỀN</button>
-            <button class="btn btn-money-ctrl" onclick="moneyGridControl('reset')">RESET BẢNG TIỀN</button>
-            <div id="v2PrizeSetter" style="display: none; margin-left: 5px;">
-                <input type="text" id="txtTotalPrize" class="set-prize-input" placeholder="Set tiền tổng..."
-                    oninput="handlePrizeInput(this)">
+    <div class="panels-container">
+
+        <div class="controls-panel">
+            <div class="controls-row" style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+                <button class="btn btn-round-toggle" style="font-weight: bold !important;"
+                    onclick="controlMHC(true)">HIỆN MHC</button>
+                <button class="btn btn-round-toggle" style="font-weight: bold !important;"
+                    onclick="controlMHC(false)">ẨN MHC</button>
+                <button class="btn btn-money-ctrl" onclick="moneyGridControl('show')">HIỆN BẢNG TIỀN</button>
+                <button class="btn btn-money-ctrl" onclick="moneyGridControl('hide')">ẨN BẢNG TIỀN</button>
+                <button class="btn btn-money-ctrl" onclick="moneyGridControl('reset')">RESET BẢNG TIỀN</button>
+                <div id="v2PrizeSetter" style="display: none; margin-left: 5px;">
+                    <input type="text" id="txtTotalPrize" class="set-prize-input" placeholder="Set tiền tổng..."
+                        oninput="handlePrizeInput(this)">
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG
+                    1</button>
+                <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
+                <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
+            </div>
+            <div class="controls-row">
+                <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
+                <button class="btn btn-view" onclick="showABCMenu()">HIỆN A, B, C</button>
+                <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
+                <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
+                <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
+                    onchange="handleExcel(event)">
+            </div>
+            <div class="controls-row">
+                <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
+                <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
+                <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
+            </div>
+            <div class="controls-row" id="r1ActionRow">
+                <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
+                <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
+                <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
+            </div>
+            <div class="controls-row" id="r2ActionRow" style="display:none;">
+                <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
+                <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
+                <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
+            </div>
+            <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2);">
+                <label style="font-size: 18px; color: #39ff14; cursor: pointer;">
+                    <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
+                        style="transform: scale(1.5); margin-right: 10px;">
+                    Số 5
+                </label>
+            </div>
+            <div class="controls-row">
+                <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
+                <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
+                <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
             </div>
         </div>
 
-        <div class="controls-row">
-            <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
-            <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
-            <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
+        <div class="sound-panel">
+            <div class="controls-row">
+                <button class="btn btn-sound" onclick="emitSound('choosing_dancer_bed.mp3')">Chọn số</button>
+                <button class="btn btn-sound" onclick="emitSound('closing.mp3')">Credit</button>
+                <button class="btn btn-sound" onclick="emitSound('contestant_win_leave.mp3')">Thắng cuộc</button>
+                <button class="btn btn-sound" onclick="emitSound('explain_the_rules.mp3')">Giải thích luật chơi</button>
+                <button class="btn btn-sound" onclick="emitSound('introduce_dancers.mp3')">Dancers</button>
+                <button class="btn btn-sound" onclick="emitSound('large_winning.mp3')">Giải thưởng lớn</button>
+                <button class="btn btn-sound" onclick="emitSound('main_theme.mp3')">Nhạc nền</button>
+                <button class="btn btn-sound" onclick="emitSound('Opening&Host_Entrance.mp3')">Mở đầu</button>
+                <button class="btn btn-sound" onclick="emitSound('round_1_bed.mp3')">Nhạc nền vòng 1</button>
+                <button class="btn btn-sound" onclick="emitSound('round_2_bed.mp3')">Nhạc nền vòng 2</button>
+                <button class="btn btn-sound" onclick="emitSound('value_increase.mp3')">Tăng điểm</button>
+                <button class="btn btn-sound" onclick="emitSound('commercial_in.mp3')">QC</button>
+                <button class="btn btn-sound" onclick="emitSound('commercial_out.mp3')">Hết QC</button>
+                <button class="btn btn-sound" onclick="emitSound('contestant_lost_leave.mp3')">Thua cuộc</button>
+                <button class="btn btn-sound" onclick="emitSound('reveal_amount.mp3')">Công bố số tiền</button>
+                <button class="btn btn-sound" onclick="emitSound('round_start.mp3')">Bắt đầu vòng thi</button>
+                <button class="btn btn-sound" onclick="emitSound('theme_short.mp3')">Nhạc nền ngắn</button>
+                <button class="btn btn-sound" onclick="emitSound('value_decrease.mp3')">Giảm điểm</button>
+                <button class="btn btn-sound" onclick="emitSound('welcome_contestant.mp3')">Chào đón người chơi</button>
+            </div>
+            <div class="controls-row">
+                <button class="btn btn-stop-sound" onclick="emitStopSound()">Dừng âm thanh</button>
+            </div>
         </div>
-        <div class="controls-row">
-            <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
-            <button class="btn btn-view" onclick="showABCMenu()">HIỆN A, B, C</button>
-            <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
-            <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
-            <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
-                onchange="handleExcel(event)">
-        </div>
-        <div class="controls-row">
-            <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
-            <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
-            <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
-        </div>
-        <div class="controls-row" id="r1ActionRow">
-            <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
-            <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
-            <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
-        </div>
-        <div class="controls-row" id="r2ActionRow" style="display:none;">
-            <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
-            <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
-            <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
-        </div>
-        <div class="controls-row">
-            <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
-            <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
-            <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
-        </div>
+
     </div>
 
     <div class="input-popup-overlay" id="inputPopupOverlay">
@@ -720,7 +684,8 @@
             round2TopicsData: [],
             currentRoundIndexR1: 0,
             currentRoundIndexR2: 0,
-            showMHC: true
+            showMHC: true,
+            lastAction: '' // Lưu trữ hành động gần nhất gửi sang Screen
         };
 
         let isFirstTopicLoad = true;
@@ -728,6 +693,10 @@
 
         function emitSound(soundName) {
             socket.emit('trigger-sound', { sound: soundName });
+        }
+
+        function emitStopSound() {
+            socket.emit('trigger-sound', { sound: 'stop_all' });
         }
 
         function showControllerAlert(msg) {
@@ -758,16 +727,41 @@
         }
 
         socket.on('sync-full-state', (serverState) => {
-            if (state.round1TopicsData && state.round1TopicsData.length > 0) {
-                serverState.round1TopicsData = state.round1TopicsData;
-                serverState.currentRoundIndexR1 = state.currentRoundIndexR1;
-            }
-            if (state.round2TopicsData && state.round2TopicsData.length > 0) {
-                serverState.round2TopicsData = state.round2TopicsData;
-                serverState.currentRoundIndexR2 = state.currentRoundIndexR2;
+            // 1. Kiểm tra sự thay đổi của checkbox Số 5 trước khi cập nhật state mới
+            const isSo5Changed = (state && state.isSo5Checked !== serverState.isSo5Checked);
+
+            // 2. Gán đồng bộ hoàn toàn dữ liệu từ Server làm chuẩn gốc
+            state = serverState;
+
+            // 3. Nếu state chưa có dữ liệu câu hỏi hiện tại (do vừa nạp Excel xong hoặc chuyển vòng)
+            // nhưng đã có danh sách đề bài lưu trên hệ thống, tiến hành nạp câu hỏi cho index hiện tại
+            if (!state.currentRoundData) {
+                let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
+                let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
+
+                if (targetList && targetList.length > 0 && targetIdx < targetList.length) {
+                    const round = targetList[targetIdx];
+                    state.currentRoundData = {
+                        topic: round.topic.toUpperCase(),
+                        A: round.A, B: round.B, C: round.C
+                    };
+                }
             }
 
-            state = serverState;
+            // 4. Đồng bộ trạng thái hiển thị của checkbox Số 5 trên giao diện
+            const chkSo5 = document.getElementById('chkSo5');
+            if (chkSo5) {
+                chkSo5.checked = !!state.isSo5Checked;
+            }
+
+            // 5. Nếu trạng thái Số 5 thay đổi động, tính toán lại mốc tiền Vòng 2
+            if (isSo5Changed && state.excelRawDataV2) {
+                if (typeof updateMoneyLayoutV2ByCheck === 'function') {
+                    updateMoneyLayoutV2ByCheck();
+                }
+            }
+
+            // 6. Render và cập nhật lại toàn bộ giao diện điều khiển
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
@@ -795,17 +789,26 @@
                 else cBox.classList.remove('used');
             });
 
-            if (state.activeQuestion) {
+            if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
-                document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass;
-                document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass;
+                
+                if (state.round1CtrlState) {
+                    document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
+                    document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'ans-btn';
+                }
+            } else {
+                document.getElementById('questionContent').innerText = '';
             }
 
+            // Đồng bộ trực quan toàn bộ Graphic công bố đáp án Vòng 2 (Gồm Text, Màu chữ, Hình nền kết quả)
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
-            r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage;
-            r2Txt.innerText = state.round2CtrlState.text;
+            if (r2Box && r2Txt && state.round2CtrlState) {
+                r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
+                r2Txt.innerText = state.round2CtrlState.text || 'ĐÁP ÁN';
+                r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+            }
 
             document.getElementById('r1ActionRow').style.display = state.currentActiveRound === 1 ? 'flex' : 'none';
             document.getElementById('r2ActionRow').style.display = state.currentActiveRound === 2 ? 'flex' : 'none';
@@ -841,6 +844,7 @@
                     });
 
                     currentGridState[idx] = 'selected';
+                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
                     sendUpdate();
                 };
                 grid.appendChild(box);
@@ -868,6 +872,7 @@
                     });
 
                     currentSymbolState[idx] = 'selected';
+                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
                     sendUpdate();
                 };
                 container.appendChild(box);
@@ -877,28 +882,43 @@
         function moneyGridControl(action) {
             if (action === 'show') {
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-
-                // HIỆU ỨNG CHẠY BẢNG TIỀN: Phát tiếng ding 12 lần liên tiếp, mỗi lần cách nhau 100 mili-giây
-                let count = 0;
-                const dingInterval = setInterval(() => {
-                    emitSound('ding.mp3');
-                    count++;
-                    if (count >= 12) {
-                        clearInterval(dingInterval); // Dừng lại sau khi đã phát đủ 12 lần
-                    }
-                }, 100); // Bạn có thể chỉnh 100 thành 80 hoặc 150 tùy thuộc vào tốc độ mong muốn
-
+                state.lastAction = 'show'; // BÁO HIỆU: Hiện bảng tiền lần lượt
             } else if (action === 'hide') {
                 if (!state.displayClasses.includes('hide-money')) {
                     state.displayClasses.push('hide-money');
                 }
+                state.lastAction = 'hide';
             } else if (action === 'reset') {
-                state.globalTotalPrize = 0;
-                state.currentMoneyLayoutV1 = ["0 ₫", "100 ₫", "200 ₫", "500 ₫", "500 ₫", "500 ₫", "1.000 ₫", "1.000 ₫", "1.000 ₫", "2.000 ₫", "3.000 ₫", "5.000 ₫"];
-                state.currentSymbolState = Array(12).fill('normal');
+                // YÊU CẦU 2: Cập nhật số tiền tổng theo đúng con số trong textbox thay vì gán bằng 0
+                const txtPrizeElem = document.getElementById('txtTotalPrize');
+                if (txtPrizeElem) {
+                    let cleanVal = txtPrizeElem.value.replace(/[^0-9]/g, '');
+                    state.globalTotalPrize = parseInt(cleanVal, 10) || 0;
+                } else {
+                    state.globalTotalPrize = 0;
+                }
+
+                state.moneyGridStateV1 = {};
+                state.moneyGridStateV2 = {};
+                state.symbolBoxesStateV1 = {};
+                state.symbolBoxesStateV2 = {};
                 state.usedChoices = { A: false, B: false, C: false };
                 state.activeQuestion = null;
-                state.displayClasses = [];
+
+                // Reset layout bảng tiền Vòng 1 về mặc định
+                state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
+
+                // YÊU CẦU 1: Xử lý reset layout bảng tiền Vòng 2 dựa theo Checkbox số 5
+                if (state.currentActiveRound === 2 && state.excelRawDataV2) {
+                    // Đang dùng bảng nào (theo checkbox số 5) thì khi reset nạp lại bảng đấy từ Excel
+                    updateMoneyLayoutV2ByCheck();
+                } else {
+                    // Nếu chưa có dữ liệu Excel hoặc ở vòng 1, trả về mặc định
+                    state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+                }
+
+                state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
+                state.lastAction = 'reset'; // BÁO HIỆU: Reset bảng tiền đồng loạt
             }
             sendUpdate();
         }
@@ -912,24 +932,10 @@
 
             state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
+            state.lastAction = 'hide';
             isFirstTopicLoad = true;
             loadRoundData();
             sendUpdate();
-        }
-
-        function loadRoundData() {
-            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
-            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
-            if (!targetList || targetList.length === 0 || targetIdx >= targetList.length) return;
-
-            const round = targetList[targetIdx];
-            state.currentRoundData = {
-                topic: round.topic.toUpperCase(),
-                A: round.A, B: round.B, C: round.C
-            };
-            state.usedChoices = { A: false, B: false, C: false };
-            state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
-            state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
         }
 
         function clickNextTopic() {
@@ -946,32 +952,34 @@
                     }
                 }
                 loadRoundData();
+                state.usedChoices = { A: false, B: false, C: false };
+                // Reset trạng thái hiển thị của câu hỏi cũ khi chính thức sang chủ đề mới
+                state.activeQuestion = null;
+                state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
+                state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000000" };
             }
             emitSound('reveal_category.mp3');
             state.displayClasses = ['hide-money', 'show-topic'];
+            state.lastAction = 'topic';
             sendUpdate();
         }
 
         function showABCMenu() {
             emitSound('reveal_letters.mp3');
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
+            state.lastAction = 'choices';
             sendUpdate();
         }
 
         function backToMoneyGrid() {
-            state.displayClasses = state.displayClasses.filter(cls => cls !== 'show-topic' && cls !== 'show-choices' && cls !== 'show-question' && cls !== 'show-r2-ans' && cls !== 'play-close' && cls !== 'show-r2-result');
+            state.displayClasses = state.displayClasses.filter(cls =>
+                cls !== 'show-topic' && cls !== 'show-choices' && cls !== 'show-question' &&
+                cls !== 'show-r2-ans' && cls !== 'play-close' && cls !== 'show-r2-result'
+            );
             state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
             state.activeQuestion = null;
 
-            // HIỆU ỨNG QUAY LẠI BẢNG TIỀN: Phát tiếng ding 12 lần liên tiếp khi hiện lại 12 ô tiền
-            let count = 0;
-            const dingInterval = setInterval(() => {
-                emitSound('ding.mp3');
-                count++;
-                if (count >= 12) {
-                    clearInterval(dingInterval);
-                }
-            }, 100);
+            state.lastAction = 'back'; // BÁO HIỆU: Quay lại bảng tiền lần lượt
 
             sendUpdate();
         }
@@ -981,6 +989,7 @@
             state.activeQuestion = choice;
             emitSound('reveal_question.mp3');
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices', 'show-question'];
+            state.lastAction = 'question';
             state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
             if (state.currentActiveRound === 2) {
                 state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
@@ -998,6 +1007,7 @@
                 state.round1CtrlState.falseBtnClass = "ans-btn chosen";
                 state.round1CtrlState.trueBtnClass = "ans-btn hidden-ans";
             }
+            state.lastAction = 'selectAnswer';
             sendUpdate();
         }
 
@@ -1014,6 +1024,7 @@
             } else {
                 state.round1CtrlState.falseBtnClass = !correctAns ? "ans-btn correct-final" : "ans-btn wrong-final";
             }
+            state.lastAction = 'revealResult1';
             sendUpdate();
         }
 
@@ -1030,17 +1041,20 @@
             state.round2CtrlState.text = text || "(Trống)";
             state.round2CtrlState.isCorrect = isCorrect;
             document.getElementById('inputPopupOverlay').style.display = 'none';
+            state.lastAction = 'savePopup';
             sendUpdate();
             socket.emit('trigger-popup', `Đã lưu đáp án câu ${state.activeQuestion}!`);
         }
 
         function revealR2AnswerGraphic() {
             state.displayClasses = ['hide-money', 'show-topic', 'show-r2-ans'];
+            state.lastAction = 'revealR2Ans';
             sendUpdate();
         }
 
         function revealR2ResultGraphic() {
             state.displayClasses = ['hide-money', 'show-topic', 'play-close'];
+            state.lastAction = 'playClose';
             sendUpdate();
 
             setTimeout(() => {
@@ -1053,6 +1067,7 @@
                     state.round2CtrlState.backgroundImage = "url('WrongAns.png')";
                     state.round2CtrlState.text = state.currentRoundData[state.activeQuestion].excelAnsRaw || "Không có đáp án";
                 }
+                state.lastAction = 'revealR2Result';
                 sendUpdate();
             }, 300);
         }
@@ -1062,6 +1077,7 @@
             state.activeQuestion = null;
             emitSound('pass.mp3');
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
+            state.lastAction = 'closeChoice';
             sendUpdate();
         }
 
@@ -1081,7 +1097,8 @@
                 const sign = signs[sIdx];
 
                 if (state.currentActiveRound === 1) {
-                    state.globalTotalPrize += (sign === '+') ? val : -val;
+                    if (sign === '+') state.globalTotalPrize += val;
+                    else if (sign === '-') state.globalTotalPrize -= val;
                 } else {
                     if (sign === '*') state.globalTotalPrize *= val;
                     else if (sign === '/' && val !== 0) state.globalTotalPrize = Math.round(state.globalTotalPrize / val);
@@ -1089,6 +1106,7 @@
 
                 currentGridState[mIdx] = 'closed';
                 currentSymbolState[sIdx] = 'closed';
+                state.lastAction = 'calculate'; // BÁO HIỆU: Đóng ô sau tính toán, giữ Screen tĩnh
                 sendUpdate();
             }
         }
@@ -1098,6 +1116,7 @@
         }
 
         function executeGameReset() {
+            document.getElementById('confirmResetOverlay').style.none;
             document.getElementById('confirmResetOverlay').style.display = 'none';
 
             state.globalTotalPrize = 0;
@@ -1119,16 +1138,69 @@
                 state.currentRoundIndexR2 = 0;
             }
             state.showMHC = true;
+            state.lastAction = 'reset'; // BÁO HIỆU: Hệ thống reset hoàn toàn
             loadRoundData();
             sendUpdate();
 
-            document.getElementById('txtTotalPrize').value = '0';
+            if (document.getElementById('txtTotalPrize')) {
+                document.getElementById('txtTotalPrize').value = '0';
+            }
 
             socket.emit('trigger-popup', "HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
             showControllerAlert("Hệ thống đã được đặt lại thành công!");
         }
 
         function triggerExcelInput() { document.getElementById('excelInput').click(); }
+
+        // Hàm bổ trợ cập nhật lại mốc tiền Vòng 2 khi thay đổi trạng thái check Số 5 công tắc
+        function updateMoneyLayoutV2ByCheck() {
+            if (!state.excelRawDataV2 || state.excelRawDataV2.length === 0) return;
+
+            let l2 = [], r2 = [];
+            const startRow = state.isSo5Checked ? 9 : 0;
+
+            for (let i = 0; i <= 5; i++) {
+                let currentRowIdx = startRow + i;
+                let cellLeft = state.excelRawDataV2[currentRowIdx]?.[8];
+                let cellRight = state.excelRawDataV2[currentRowIdx]?.[9];
+
+                l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
+                r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
+            }
+            state.currentMoneyLayoutV2 = l2.concat(r2);
+        }
+
+        // Sửa lại hàm toggleSo5 (nút checkbox gọi đến) để kích hoạt cập nhật
+        function toggleSo5(isChecked) {
+            state.isSo5Checked = isChecked;
+            state.lastAction = 'toggleSo5';
+
+            // Cập nhật lại mốc tiền cục bộ trước khi gửi đồng bộ đi các máy khác
+            updateMoneyLayoutV2ByCheck();
+
+            loadRoundData();
+            sendUpdate(); // Hàm gửi state lên server.js của bạn
+        }
+
+        function loadRoundData() {
+            if (!state) return;
+            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
+
+            if (!targetList || targetList.length === 0 || targetIdx >= targetList.length) {
+                state.currentRoundData = null;
+                return;
+            }
+
+            const round = targetList[targetIdx];
+            state.currentRoundData = {
+                topic: round.topic.toUpperCase(),
+                A: round.A,
+                B: round.B,
+                C: round.C
+            };
+            // KHÔNG tự ý reset usedChoices, round1CtrlState hay round2CtrlState tại đây để tránh xung đột đa máy.
+        }
 
         function handleExcel(event) {
             const file = event.target.files[0];
@@ -1144,6 +1216,7 @@
                 let l1 = [], r1 = [];
                 let l2 = [], r2 = [];
 
+                // --- XỬ LÝ VÒNG 1 (Giữ nguyên logic của bạn) ---
                 const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
                 if (fV1) {
                     const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
@@ -1169,16 +1242,27 @@
                     }
                 }
 
+                // --- XỬ LÝ VÒNG 2 (Sửa đổi động theo trạng thái Checkbox Số 5) ---
                 const fV2 = workbook.SheetNames.find(n => n.trim() === "Vòng 2");
                 if (fV2) {
                     const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
                     if (jsonV2.length > 0) {
-                        for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
-                            let cellLeft = jsonV2[rowIdx]?.[8];
-                            let cellRight = jsonV2[rowIdx]?.[9];
 
-                            l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[rowIdx]);
-                            r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[rowIdx + 6]);
+                        // LƯU ĐẦU ĐỀ RAW VÀO STATE ĐỂ SAU NÀY BẬT/TẮT CHECKBOX CÓ THỂ ĐỌC LẠI ĐƯỢC
+                        state.excelRawDataV2 = jsonV2;
+
+                        // TÍNH TOÁN DÒNG BẮT ĐẦU DỰA TRÊN CHECKBOX SỐ 5
+                        // Nếu check: Hàng 10 đến 15 (Chỉ số mảng: 9 đến 14)
+                        // Nếu không check: Hàng 1 đến 6 (Chỉ số mảng: 0 đến 5)
+                        const startRow = state.isSo5Checked ? 9 : 0;
+
+                        for (let i = 0; i <= 5; i++) {
+                            let currentRowIdx = startRow + i;
+                            let cellLeft = jsonV2[currentRowIdx]?.[8];   // Cột I
+                            let cellRight = jsonV2[currentRowIdx]?.[9];  // Cột J
+
+                            l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
+                            r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
                         }
                         state.currentMoneyLayoutV2 = l2.concat(r2);
 
@@ -1193,9 +1277,12 @@
                         }
                     }
                 }
+
                 state.currentRoundIndexR1 = 0;
                 state.currentRoundIndexR2 = 0;
                 state.displayClasses = ['hide-money'];
+                state.lastAction = 'loadExcel';
+
                 isFirstTopicLoad = true;
                 loadRoundData();
                 sendUpdate();
@@ -1210,6 +1297,7 @@
 
         function controlMHC(status) {
             state.showMHC = status;
+            state.lastAction = 'mhc';
             sendUpdate();
         }
 
@@ -1223,8 +1311,9 @@
 
             sendUpdate();
 
-            // Khởi tạo ô nhập hiển thị giá trị mặc định đầu tiên
-            document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
+            if (document.getElementById('txtTotalPrize')) {
+                document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
+            }
         });
     </script>
 </body>

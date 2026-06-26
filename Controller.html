@@ -691,12 +691,45 @@
         let isFirstTopicLoad = true;
         let lastHideMoneyStateCtrl = true;
 
+
+        const SHORT_SOUNDS = [
+            'reveal_amount.mp3',
+            'round_start.mp3',
+            'theme_short.mp3',
+            'ding.mp3'
+        ];
+
+        // Object lưu trữ các Audio đã được preload sẵn
+        const audioCache = {};
+
+        // Tự động khởi tạo và preload tất cả các âm thanh ngắn ngay khi load trang
+        SHORT_SOUNDS.forEach(soundName => {
+            const audio = new Audio(soundName);
+            audio.preload = 'auto';
+            audioCache[soundName] = audio;
+        });
+
+        // Hàm emitSound cập nhật để phát ngay lập tức không delay trên máy Controller (nếu cần nghe)
         function emitSound(soundName) {
             socket.emit('trigger-sound', { sound: soundName });
+
+            // Nếu Controller muốn phát ra tiếng không delay để Host nghe thấy trên máy mình:
+            if (audioCache[soundName]) {
+                const audio = audioCache[soundName];
+                audio.currentTime = 0; // Tua nhanh về đầu để sẵn sàng phát lại liên tục
+                audio.play().catch(e => console.log("Chờ tương tác người dùng để phát âm thanh:", e));
+            }
         }
 
         function emitStopSound() {
             socket.emit('trigger-sound', { sound: 'stop_all' });
+            // Dừng âm thanh cục bộ trên máy controller nếu có
+            SHORT_SOUNDS.forEach(soundName => {
+                if (audioCache[soundName]) {
+                    audioCache[soundName].pause();
+                    audioCache[soundName].currentTime = 0;
+                }
+            });
         }
 
         function showControllerAlert(msg) {
@@ -792,7 +825,7 @@
             if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
-                
+
                 if (state.round1CtrlState) {
                     document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
                     document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'ans-btn';

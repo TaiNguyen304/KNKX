@@ -527,37 +527,63 @@
         // Mảng lưu trữ các đối tượng audio đang được phát để có thể dừng khi có lệnh
         let activeAudios = [];
 
+        // --- HỆ THỐNG CACHE & AUTO PRELOAD ÂM THANH NGẮN DƯỚI 10S ---
+        const SHORT_SOUNDS = [
+            'reveal_amount.mp3',
+            'round_start.mp3',
+            'theme_short.mp3',
+            'ding.mp3'
+        ];
+
+        const audioCache = {};
+        let currentBackgroundMusic = null; // Biến quản lý nhạc nền dài để dừng khi cần
+
+        // Tiến hành tải trước vào bộ nhớ ngay khi mở màn hình Screen
+        SHORT_SOUNDS.forEach(soundName => {
+            const audio = new Audio(soundName);
+            audio.preload = 'auto';
+            // Đảm bảo load dữ liệu âm thanh ngầm
+            audio.load();
+            audioCache[soundName] = audio;
+        });
+
+        // Lắng nghe sự kiện phát âm thanh đồng bộ từ server gửi xuống
         socket.on('play-sound-client', (data) => {
-            if (data && data.sound) {
-                // NẾU LÀ LỆNH DỪNG ÂM THANH
-                if (data.sound === 'stop_all') {
-                    activeAudios.forEach(audio => {
-                        try {
-                            audio.pause();
-                            audio.currentTime = 0; // Tua về đầu bài
-                        } catch (e) {
-                            console.error("Lỗi khi dừng âm thanh:", e);
-                        }
-                    });
-                    activeAudios = []; // Xóa danh sách quản lý sau khi đã dừng hết
-                    return; // Thoát hàm, không chạy tiếp xuống dưới
-                }
+            if (!data || !data.sound) return;
 
-                // NẾU LÀ FILE PHÁT ÂM THANH THÔNG THƯỜNG
-                const audio = new Audio(data.sound);
+            const soundName = data.sound;
 
-                // Thêm audio này vào mảng quản lý
-                activeAudios.push(audio);
-
-                // Khi âm thanh chạy xong thì tự động xóa khỏi mảng activeAudios để giải phóng bộ nhớ
-                audio.onended = () => {
-                    activeAudios = activeAudios.filter(a => a !== audio);
-                };
-
-                audio.play().catch(err => {
-                    console.log("Không thể tự động phát âm thanh do tương tác trình duyệt:", err);
-                });
+            // TRƯỜNG HỢP 1: Là âm thanh ngắn dưới 10 giây -> Phát ngay lập tức không delay
+            if (audioCache[soundName]) {
+                const audio = audioCache[soundName];
+                audio.currentTime = 0; // Đưa về giây 0 (giúp bấm liên tục vẫn phát được ngay)
+                audio.play().catch(err => console.log("Lỗi phát âm thanh ngắn:", err));
             }
+            // TRƯỜNG HỢP 2: Là các bản nhạc nền dài (trên 10 giây) -> Tạo luồng chạy bình thường
+            else {
+                // Nếu bài cũ đang chạy thì dừng lại trước khi đổi bài dài mới
+                if (currentBackgroundMusic) {
+                    currentBackgroundMusic.pause();
+                }
+                currentBackgroundMusic = new Audio(soundName);
+                currentBackgroundMusic.play().catch(err => console.log("Lỗi phát nhạc nền:", err));
+            }
+        });
+
+        // Lắng nghe sự kiện dừng toàn bộ âm thanh
+        socket.on('stop-all-sounds-client', () => {
+            // 1. Dừng nhạc nền dài
+            if (currentBackgroundMusic) {
+                currentBackgroundMusic.pause();
+                currentBackgroundMusic.currentTime = 0;
+            }
+            // 2. Dừng toàn bộ các âm thanh ngắn đang chạy dở
+            SHORT_SOUNDS.forEach(soundName => {
+                if (audioCache[soundName]) {
+                    audioCache[soundName].pause();
+                    audioCache[soundName].currentTime = 0;
+                }
+            });
         });
 
         let lastHideMoneyState = true;
@@ -565,7 +591,7 @@
         let currentRenderSession = 0;
 
         socket.on('sync-full-state', (state) => {
-            
+
             // --- XỬ LÝ ẨN/HIỆN MÀN HÌNH CHỜ (MHC) ---
             const mhc = document.getElementById('mhcOverlay');
             if (mhc) {

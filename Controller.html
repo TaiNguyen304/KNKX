@@ -52,6 +52,30 @@
             color: #000000;
             font-size: 28px;
             cursor: pointer;
+            position: relative;
+        }
+
+        .symbol-side {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-image: url('truefalserightstrap.png');
+            background-size: 100% 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #ffffff;
+            opacity: 0;
+            transform-origin: center;
+        }
+
+        .symbol-side.left {
+            left: -60px;
+        }
+
+        .symbol-side.right {
+            right: -60px;
         }
 
         .symbols-row {
@@ -384,6 +408,13 @@
             color: #fff !important;
         }
 
+        .btn-symbol-ctrl {
+            background-color: #800080 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border: 1px solid #fff;
+        }
+
         .btn-sound {
             background-color: #800080 !important;
             color: #ffffff !important;
@@ -481,13 +512,67 @@
             opacity: 0;
             animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
+
+        @keyframes expandMainPrize {
+            0% {
+                transform: scaleX(1) scaleY(1);
+            }
+
+            50% {
+                transform: scaleX(0.85) scaleY(1);
+            }
+
+            100% {
+                transform: scaleX(0.85) scaleY(1);
+            }
+        }
+
+        @keyframes showSymbolSide {
+            0% {
+                opacity: 0;
+                transform: scaleX(0) scaleY(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scaleX(1) scaleY(1);
+            }
+        }
+
+        @keyframes hideSymbolSide {
+            0% {
+                opacity: 1;
+                transform: scaleX(1) scaleY(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scaleX(0) scaleY(0);
+            }
+        }
+
+        .main-prize.expand-mode {
+            animation: expandMainPrize 0.3s ease-in-out forwards;
+        }
+
+        .symbol-side.show {
+            animation: showSymbolSide 0.3s ease-in-out 0.1s forwards;
+        }
+
+        .symbol-side.hide {
+            animation: hideSymbolSide 0.3s ease-in-out forwards;
+        }
     </style>
 </head>
 
 <body>
 
     <div class="game-board hide-money" id="gameBoard">
-        <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+        <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">
+            0 $A
+            <div class="symbol-side left" id="symbolLeft"></div>
+            <div class="symbol-side right" id="symbolRight"></div>
+        </div>
         <div class="symbols-row" id="symbolsRow"></div>
 
         <div class="bottom-area">
@@ -557,6 +642,13 @@
                 <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
                 <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
                     onchange="handleExcel(event)">
+            </div>
+            <div class="controls-row">
+                <button class="btn btn-symbol-ctrl" onclick="openSymbolMode('+')">Mở dấu cộng</button>
+                <button class="btn btn-symbol-ctrl" onclick="openSymbolMode('-')">Mở dấu trừ</button>
+                <button class="btn btn-symbol-ctrl" onclick="openSymbolMode('×')">Mở dấu nhân</button>
+                <button class="btn btn-symbol-ctrl" onclick="openSymbolMode('÷')">Mở dấu chia</button>
+                <button class="btn btn-symbol-ctrl" onclick="hideSymbolMode()">Ẩn dấu</button>
             </div>
             <div class="controls-row">
                 <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
@@ -686,7 +778,8 @@
             currentRoundIndexR1: 0,
             currentRoundIndexR2: 0,
             showMHC: true,
-            lastAction: '' // Lưu trữ hành động gần nhất gửi sang Screen
+            lastAction: '',
+            openedSymbol: null
         };
 
         let isFirstTopicLoad = true;
@@ -700,31 +793,26 @@
             'ding.mp3'
         ];
 
-        // Object lưu trữ các Audio đã được preload sẵn
         const audioCache = {};
 
-        // Tự động khởi tạo và preload tất cả các âm thanh ngắn ngay khi load trang
         SHORT_SOUNDS.forEach(soundName => {
             const audio = new Audio(soundName);
             audio.preload = 'auto';
             audioCache[soundName] = audio;
         });
 
-        // Hàm emitSound cập nhật để phát ngay lập tức không delay trên máy Controller (nếu cần nghe)
         function emitSound(soundName) {
             socket.emit('trigger-sound', { sound: soundName });
 
-            // Nếu Controller muốn phát ra tiếng không delay để Host nghe thấy trên máy mình:
             if (audioCache[soundName]) {
                 const audio = audioCache[soundName];
-                audio.currentTime = 0; // Tua nhanh về đầu để sẵn sàng phát lại liên tục
+                audio.currentTime = 0;
                 audio.play().catch(e => console.log("Chờ tương tác người dùng để phát âm thanh:", e));
             }
         }
 
         function emitStopSound() {
             socket.emit('trigger-sound', { sound: 'stop_all' });
-            // Dừng âm thanh cục bộ trên máy controller nếu có
             SHORT_SOUNDS.forEach(soundName => {
                 if (audioCache[soundName]) {
                     audioCache[soundName].pause();
@@ -760,15 +848,32 @@
             socket.emit('update-game-state', state);
         }
 
+        function openSymbolMode(symbol) {
+            state.openedSymbol = symbol;
+            state.lastAction = 'open-symbol';
+            sendUpdate();
+        }
+
+        function hideSymbolMode() {
+            state.openedSymbol = null;
+            state.lastAction = 'hide-symbol';
+            sendUpdate();
+        }
+
+        function calculateFromSelection() {
+            if (!state.openedSymbol) {
+                showControllerAlert('Chưa mở dấu để tính toán');
+                return;
+            }
+            state.lastAction = 'calculate-symbol';
+            sendUpdate();
+        }
+
         socket.on('sync-full-state', (serverState) => {
-            // 1. Kiểm tra sự thay đổi của checkbox Số 5 trước khi cập nhật state mới
             const isSo5Changed = (state && state.isSo5Checked !== serverState.isSo5Checked);
 
-            // 2. Gán đồng bộ hoàn toàn dữ liệu từ Server làm chuẩn gốc
             state = serverState;
 
-            // 3. Nếu state chưa có dữ liệu câu hỏi hiện tại (do vừa nạp Excel xong hoặc chuyển vòng)
-            // nhưng đã có danh sách đề bài lưu trên hệ thống, tiến hành nạp câu hỏi cho index hiện tại
             if (!state.currentRoundData) {
                 let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
                 let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
@@ -782,20 +887,17 @@
                 }
             }
 
-            // 4. Đồng bộ trạng thái hiển thị của checkbox Số 5 trên giao diện
             const chkSo5 = document.getElementById('chkSo5');
             if (chkSo5) {
                 chkSo5.checked = !!state.isSo5Checked;
             }
 
-            // 5. Nếu trạng thái Số 5 thay đổi động, tính toán lại mốc tiền Vòng 2
             if (isSo5Changed && state.excelRawDataV2) {
                 if (typeof updateMoneyLayoutV2ByCheck === 'function') {
                     updateMoneyLayoutV2ByCheck();
                 }
             }
 
-            // 6. Render và cập nhật lại toàn bộ giao diện điều khiển
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
@@ -809,7 +911,24 @@
                 state.displayClasses.forEach(cls => board.classList.add(cls));
             }
 
-            document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+            const prizeElem = document.getElementById('totalPrize');
+            prizeElem.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+
+            if (state.openedSymbol) {
+                prizeElem.classList.add('expand-mode');
+                document.getElementById('symbolLeft').textContent = state.openedSymbol;
+                document.getElementById('symbolRight').textContent = state.openedSymbol;
+                document.getElementById('symbolLeft').classList.remove('hide');
+                document.getElementById('symbolRight').classList.remove('hide');
+                document.getElementById('symbolLeft').classList.add('show');
+                document.getElementById('symbolRight').classList.add('show');
+            } else {
+                prizeElem.classList.remove('expand-mode');
+                document.getElementById('symbolLeft').classList.remove('show');
+                document.getElementById('symbolRight').classList.remove('show');
+                document.getElementById('symbolLeft').classList.add('hide');
+                document.getElementById('symbolRight').classList.add('hide');
+            }
 
             document.getElementById('btnRound1').classList.toggle('active-round', state.currentActiveRound === 1);
             document.getElementById('btnRound2').classList.toggle('active-round', state.currentActiveRound === 2);
@@ -835,7 +954,6 @@
                 document.getElementById('questionContent').innerText = '';
             }
 
-            // Đồng bộ trực quan toàn bộ Graphic công bố đáp án Vòng 2 (Gồm Text, Màu chữ, Hình nền kết quả)
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
             if (r2Box && r2Txt && state.round2CtrlState) {
@@ -878,7 +996,7 @@
                     });
 
                     currentGridState[idx] = 'selected';
-                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
+                    state.lastAction = 'select';
                     sendUpdate();
                 };
                 grid.appendChild(box);
@@ -906,7 +1024,7 @@
                     });
 
                     currentSymbolState[idx] = 'selected';
-                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
+                    state.lastAction = 'select';
                     sendUpdate();
                 };
                 container.appendChild(box);
@@ -916,14 +1034,13 @@
         function moneyGridControl(action) {
             if (action === 'show') {
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-                state.lastAction = 'show'; // BÁO HIỆU: Hiện bảng tiền lần lượt
+                state.lastAction = 'show';
             } else if (action === 'hide') {
                 if (!state.displayClasses.includes('hide-money')) {
                     state.displayClasses.push('hide-money');
                 }
                 state.lastAction = 'hide';
             } else if (action === 'reset') {
-                // YÊU CẦU 2: Cập nhật số tiền tổng theo đúng con số trong textbox thay vì gán bằng 0
                 const txtPrizeElem = document.getElementById('txtTotalPrize');
                 if (txtPrizeElem) {
                     let cleanVal = txtPrizeElem.value.replace(/[^0-9]/g, '');
@@ -938,21 +1055,18 @@
                 state.symbolBoxesStateV2 = {};
                 state.usedChoices = { A: false, B: false, C: false };
                 state.activeQuestion = null;
+                state.openedSymbol = null;
 
-                // Reset layout bảng tiền Vòng 1 về mặc định
                 state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
 
-                // YÊU CẦU 1: Xử lý reset layout bảng tiền Vòng 2 dựa theo Checkbox số 5
                 if (state.currentActiveRound === 2 && state.excelRawDataV2) {
-                    // Đang dùng bảng nào (theo checkbox số 5) thì khi reset nạp lại bảng đấy từ Excel
                     updateMoneyLayoutV2ByCheck();
                 } else {
-                    // Nếu chưa có dữ liệu Excel hoặc ở vòng 1, trả về mặc định
                     state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
                 }
 
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-                state.lastAction = 'reset'; // BÁO HIỆU: Reset bảng tiền đồng loạt
+                state.lastAction = 'reset';
             }
             sendUpdate();
         }
@@ -966,6 +1080,7 @@
 
             state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
+            state.openedSymbol = null;
             state.lastAction = 'hide';
             isFirstTopicLoad = true;
             loadRoundData();
@@ -987,8 +1102,8 @@
                 }
                 loadRoundData();
                 state.usedChoices = { A: false, B: false, C: false };
-                // Reset trạng thái hiển thị của câu hỏi cũ khi chính thức sang chủ đề mới
                 state.activeQuestion = null;
+                state.openedSymbol = null;
                 state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
                 state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000000" };
             }
@@ -999,149 +1114,108 @@
         }
 
         function showABCMenu() {
+            state.displayClasses = ['hide-money', 'show-choices'];
+            state.lastAction = 'choice';
             emitSound('reveal_letters.mp3');
-            state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
-            state.lastAction = 'choices';
             sendUpdate();
         }
 
         function backToMoneyGrid() {
-            state.displayClasses = state.displayClasses.filter(cls =>
-                cls !== 'show-topic' && cls !== 'show-choices' && cls !== 'show-question' &&
-                cls !== 'show-r2-ans' && cls !== 'play-close' && cls !== 'show-r2-result'
-            );
-            state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
+            state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
-
-            state.lastAction = 'back'; // BÁO HIỆU: Quay lại bảng tiền lần lượt
-
+            state.openedSymbol = null;
+            state.lastAction = 'back';
             sendUpdate();
         }
 
         function openQuestion(choice) {
-            if (state.usedChoices[choice]) return;
-            state.activeQuestion = choice;
-            emitSound('reveal_question.mp3');
-            state.displayClasses = ['hide-money', 'show-topic', 'show-choices', 'show-question'];
-            state.lastAction = 'question';
-            state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
-            if (state.currentActiveRound === 2) {
-                state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
+            if (!state.currentRoundData || !state.currentRoundData[choice]) {
+                return;
             }
+
+            state.activeQuestion = choice;
+            state.usedChoices[choice] = true;
+            if (state.currentActiveRound === 1) {
+                state.displayClasses = ['show-question'];
+                state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
+            } else {
+                state.displayClasses = [];
+            }
+            emitSound('reveal_question.mp3');
+            state.lastAction = 'open-question';
+            state.openedSymbol = null;
             sendUpdate();
         }
 
         function selectAnswerAdmin(isTrue) {
-            if (state.currentActiveRound === 2 || !state.activeQuestion) return;
+            if (!state.activeQuestion) return;
+
             state.round1CtrlState.selectedStatusAdmin = isTrue;
             if (isTrue) {
-                state.round1CtrlState.trueBtnClass = "ans-btn chosen";
-                state.round1CtrlState.falseBtnClass = "ans-btn hidden-ans";
+                state.round1CtrlState.trueBtnClass = 'ans-btn chosen';
+                state.round1CtrlState.falseBtnClass = 'ans-btn';
             } else {
-                state.round1CtrlState.falseBtnClass = "ans-btn chosen";
-                state.round1CtrlState.trueBtnClass = "ans-btn hidden-ans";
+                state.round1CtrlState.trueBtnClass = 'ans-btn';
+                state.round1CtrlState.falseBtnClass = 'ans-btn chosen';
             }
-            state.lastAction = 'selectAnswer';
+            state.lastAction = 'select-ans';
             sendUpdate();
         }
 
         function revealResultRound1() {
-            if (!state.activeQuestion || state.round1CtrlState.selectedStatusAdmin === null) return;
-            const correctAns = state.currentRoundData[state.activeQuestion].correct;
-            if (state.round1CtrlState.selectedStatusAdmin === correctAns) {
+            if (!state.round1CtrlState.selectedStatusAdmin !== undefined) return;
+
+            const isCorrect = state.round1CtrlState.selectedStatusAdmin === true;
+            const questionData = state.currentRoundData[state.activeQuestion];
+
+            if (isCorrect) {
+                state.round1CtrlState.trueBtnClass = 'ans-btn correct-final';
+                state.round1CtrlState.falseBtnClass = 'ans-btn';
                 emitSound('correct.mp3');
             } else {
+                state.round1CtrlState.trueBtnClass = 'ans-btn';
+                state.round1CtrlState.falseBtnClass = 'ans-btn wrong-final';
                 emitSound('wrong.mp3');
             }
-            if (state.round1CtrlState.selectedStatusAdmin === true) {
-                state.round1CtrlState.trueBtnClass = correctAns ? "ans-btn correct-final" : "ans-btn wrong-final";
-            } else {
-                state.round1CtrlState.falseBtnClass = !correctAns ? "ans-btn correct-final" : "ans-btn wrong-final";
-            }
-            state.lastAction = 'revealResult1';
+
+            state.lastAction = 'reveal-result';
+            state.openedSymbol = null;
             sendUpdate();
         }
 
         function openInputPopup() {
-            if (!state.activeQuestion) return;
-            document.getElementById('popupTitle').innerText = `Nhập câu ${state.activeQuestion}`;
-            document.getElementById('popupCandidateAns').value = '';
             document.getElementById('inputPopupOverlay').style.display = 'flex';
         }
 
         function savePopupData() {
-            const text = document.getElementById('popupCandidateAns').value.trim();
+            const candAns = document.getElementById('popupCandidateAns').value.trim();
             const isCorrect = document.getElementById('chkCorrect').checked;
-            state.round2CtrlState.text = text || "(Trống)";
+
+            if (!candAns) {
+                showControllerAlert('Vui lòng nhập đáp án');
+                return;
+            }
+
+            state.round2CtrlState.text = candAns;
             state.round2CtrlState.isCorrect = isCorrect;
+            state.round2CtrlState.backgroundImage = isCorrect ? "url('right strap.png')" : "url('RightAns.png')";
+            state.round2CtrlState.textColor = '#ffffff';
+
             document.getElementById('inputPopupOverlay').style.display = 'none';
-            state.lastAction = 'savePopup';
-            sendUpdate();
-            socket.emit('trigger-popup', `Đã lưu đáp án câu ${state.activeQuestion}!`);
+            document.getElementById('popupCandidateAns').value = '';
         }
 
         function revealR2AnswerGraphic() {
-            state.displayClasses = ['hide-money', 'show-topic', 'show-r2-ans'];
-            state.lastAction = 'revealR2Ans';
+            state.displayClasses = ['round-2-mode', 'show-r2-ans'];
+            state.lastAction = 'reveal-r2-ans';
+            emitSound('reveal_amount.mp3');
             sendUpdate();
         }
 
         function revealR2ResultGraphic() {
-            state.displayClasses = ['hide-money', 'show-topic', 'play-close'];
-            state.lastAction = 'playClose';
+            state.displayClasses = ['round-2-mode', 'show-r2-result'];
+            state.lastAction = 'reveal-r2-result';
             sendUpdate();
-
-            setTimeout(() => {
-                state.displayClasses = ['hide-money', 'show-topic', 'show-r2-result'];
-                if (state.round2CtrlState.isCorrect) {
-                    emitSound('correct.mp3');
-                    state.round2CtrlState.backgroundImage = "url('RightAns.png')";
-                } else {
-                    emitSound('wrong.mp3');
-                    state.round2CtrlState.backgroundImage = "url('WrongAns.png')";
-                    state.round2CtrlState.text = state.currentRoundData[state.activeQuestion].excelAnsRaw || "Không có đáp án";
-                }
-                state.lastAction = 'revealR2Result';
-                sendUpdate();
-            }, 300);
-        }
-
-        function closeAndMarkUsed(choice) {
-            state.usedChoices[choice] = true;
-            state.activeQuestion = null;
-            state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
-            state.lastAction = 'closeChoice';
-            sendUpdate();
-        }
-
-        function calculateFromSelection() {
-            const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
-            const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
-
-            let mIdx = Object.keys(currentGridState).find(k => currentGridState[k] === 'selected');
-            let sIdx = Object.keys(currentSymbolState).find(k => currentSymbolState[k] === 'selected');
-
-            if (mIdx !== undefined && sIdx !== undefined) {
-                const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
-                const rawText = layout[mIdx];
-                let val = parseInt(rawText.replace(/[^0-9]/g, ''), 10) || 0;
-
-                const signs = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['*', '*', '*', '*', '/', '/', '/', '/'];
-                const sign = signs[sIdx];
-
-                if (state.currentActiveRound === 1) {
-                    if (sign === '+') state.globalTotalPrize += val;
-                    else if (sign === '-') state.globalTotalPrize -= val;
-                } else {
-                    if (sign === '*') state.globalTotalPrize *= val;
-                    else if (sign === '/' && val !== 0) state.globalTotalPrize = Math.round(state.globalTotalPrize / val);
-                }
-
-                currentGridState[mIdx] = 'closed';
-                currentSymbolState[sIdx] = 'closed';
-                state.lastAction = 'calculate'; // BÁO HIỆU: Đóng ô sau tính toán, giữ Screen tĩnh
-                sendUpdate();
-            }
         }
 
         function triggerResetConfirmPopup() {
@@ -1149,205 +1223,134 @@
         }
 
         function executeGameReset() {
-            document.getElementById('confirmResetOverlay').style.none;
-            document.getElementById('confirmResetOverlay').style.display = 'none';
-
             state.globalTotalPrize = 0;
             state.moneyGridStateV1 = {};
             state.moneyGridStateV2 = {};
             state.symbolBoxesStateV1 = {};
             state.symbolBoxesStateV2 = {};
             state.usedChoices = { A: false, B: false, C: false };
-            state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
-            isFirstTopicLoad = true;
-
+            state.openedSymbol = null;
+            state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
+            state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000" };
+            state.displayClasses = ['hide-money'];
+            state.currentActiveRound = 1;
             state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
             state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+            state.round1TopicsData = [];
+            state.round2TopicsData = [];
+            state.currentRoundIndexR1 = 0;
+            state.currentRoundIndexR2 = 0;
+            state.lastAction = 'reset';
 
-            if (state.currentActiveRound === 1) {
-                state.currentRoundIndexR1 = 0;
-            } else {
-                state.currentRoundIndexR2 = 0;
-            }
-            state.showMHC = true;
-            state.lastAction = 'reset'; // BÁO HIỆU: Hệ thống reset hoàn toàn
+            document.getElementById('confirmResetOverlay').style.display = 'none';
+            document.getElementById('txtTotalPrize').value = '';
+
+            isFirstTopicLoad = true;
             loadRoundData();
             sendUpdate();
-
-            if (document.getElementById('txtTotalPrize')) {
-                document.getElementById('txtTotalPrize').value = '0';
-            }
-
-            socket.emit('trigger-popup', "HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
-            showControllerAlert("Hệ thống đã được đặt lại thành công!");
         }
 
-        function triggerExcelInput() { document.getElementById('excelInput').click(); }
-
-        // Hàm bổ trợ cập nhật lại mốc tiền Vòng 2 khi thay đổi trạng thái check Số 5 công tắc
-        function updateMoneyLayoutV2ByCheck() {
-            if (!state.excelRawDataV2 || state.excelRawDataV2.length === 0) return;
-
-            let l2 = [], r2 = [];
-            const startRow = state.isSo5Checked ? 9 : 0;
-
-            for (let i = 0; i <= 5; i++) {
-                let currentRowIdx = startRow + i;
-                let cellLeft = state.excelRawDataV2[currentRowIdx]?.[8];
-                let cellRight = state.excelRawDataV2[currentRowIdx]?.[9];
-
-                l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
-                r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
-            }
-            state.currentMoneyLayoutV2 = l2.concat(r2);
-        }
-
-        // Sửa lại hàm toggleSo5 (nút checkbox gọi đến) để kích hoạt cập nhật
-        function toggleSo5(isChecked) {
-            state.isSo5Checked = isChecked;
-            state.lastAction = 'toggleSo5';
-
-            // Cập nhật lại mốc tiền cục bộ trước khi gửi đồng bộ đi các máy khác
-            updateMoneyLayoutV2ByCheck();
-
-            loadRoundData();
-            sendUpdate(); // Hàm gửi state lên server.js của bạn
-        }
-
-        function loadRoundData() {
-            if (!state) return;
-            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
-            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
-
-            if (!targetList || targetList.length === 0 || targetIdx >= targetList.length) {
-                state.currentRoundData = null;
-                return;
-            }
-
-            const round = targetList[targetIdx];
-            state.currentRoundData = {
-                topic: round.topic.toUpperCase(),
-                A: round.A,
-                B: round.B,
-                C: round.C
-            };
-            // KHÔNG tự ý reset usedChoices, round1CtrlState hay round2CtrlState tại đây để tránh xung đột đa máy.
+        function triggerExcelInput() {
+            document.getElementById('excelInput').click();
         }
 
         function handleExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
 
-                state.round1TopicsData = [];
-                state.round2TopicsData = [];
+                    state.round1TopicsData = [];
+                    state.round2TopicsData = [];
 
-                let l1 = [], r1 = [];
-                let l2 = [], r2 = [];
+                    workbook.SheetNames.forEach((sheetName, sheetIdx) => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                // --- XỬ LÝ VÒNG 1 (Giữ nguyên logic của bạn) ---
-                const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
-                if (fV1) {
-                    const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
-                    if (jsonV1.length > 0) {
-                        for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
-                            let cellLeft = jsonV1[rowIdx]?.[8];
-                            let cellRight = jsonV1[rowIdx]?.[9];
+                        const targetArray = (sheetIdx === 0) ? state.round1TopicsData : state.round2TopicsData;
 
-                            l1.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V1[rowIdx]);
-                            r1.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V1[rowIdx + 6]);
-                        }
-                        state.currentMoneyLayoutV1 = l1.concat(r1);
+                        jsonData.forEach((row, rowIdx) => {
+                            if (rowIdx === 0) return;
+                            if (!Array.isArray(row) || row.length < 4) return;
 
-                        for (let qIdx = 1; qIdx < jsonV1.length; qIdx++) {
-                            if (!jsonV1[qIdx] || !jsonV1[qIdx][0] || String(jsonV1[qIdx][0]).trim() === "" || String(jsonV1[qIdx][0]).trim() === "Chủ đề") continue;
-                            state.round1TopicsData.push({
-                                topic: String(jsonV1[qIdx][0]).trim(),
-                                A: { text: jsonV1[qIdx][1] || "Trống", correct: String(jsonV1[qIdx][4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][4]).trim() },
-                                B: { text: jsonV1[qIdx][2] || "Trống", correct: String(jsonV1[qIdx][5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][5]).trim() },
-                                C: { text: jsonV1[qIdx][3] || "Trống", correct: String(jsonV1[qIdx][6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][6]).trim() }
-                            });
-                        }
-                    }
+                            const topic = (row[0] || '').toString().trim();
+                            const aText = (row[1] || '').toString().trim();
+                            const bText = (row[2] || '').toString().trim();
+                            const cText = (row[3] || '').toString().trim();
+
+                            if (topic && aText && bText && cText) {
+                                targetArray.push({
+                                    topic: topic,
+                                    A: { text: aText, correct: true },
+                                    B: { text: bText, correct: true },
+                                    C: { text: cText, correct: true }
+                                });
+                            }
+                        });
+                    });
+
+                    state.currentRoundIndexR1 = 0;
+                    state.currentRoundIndexR2 = 0;
+                    state.currentActiveRound = 1;
+                    state.displayClasses = ['hide-money'];
+                    state.activeQuestion = null;
+                    state.openedSymbol = null;
+                    isFirstTopicLoad = true;
+                    loadRoundData();
+                    state.lastAction = 'excel-loaded';
+                    sendUpdate();
+
+                    showControllerAlert(`Tải Excel thành công!\nVòng 1: ${state.round1TopicsData.length} câu\nVòng 2: ${state.round2TopicsData.length} câu`);
+                } catch (error) {
+                    showControllerAlert('Lỗi tải Excel: ' + error.message);
                 }
-
-                // --- XỬ LÝ VÒNG 2 (Sửa đổi động theo trạng thái Checkbox Số 5) ---
-                const fV2 = workbook.SheetNames.find(n => n.trim() === "Vòng 2");
-                if (fV2) {
-                    const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
-                    if (jsonV2.length > 0) {
-
-                        // LƯU ĐẦU ĐỀ RAW VÀO STATE ĐỂ SAU NÀY BẬT/TẮT CHECKBOX CÓ THỂ ĐỌC LẠI ĐƯỢC
-                        state.excelRawDataV2 = jsonV2;
-
-                        // TÍNH TOÁN DÒNG BẮT ĐẦU DỰA TRÊN CHECKBOX SỐ 5
-                        // Nếu check: Hàng 10 đến 15 (Chỉ số mảng: 9 đến 14)
-                        // Nếu không check: Hàng 1 đến 6 (Chỉ số mảng: 0 đến 5)
-                        const startRow = state.isSo5Checked ? 9 : 0;
-
-                        for (let i = 0; i <= 5; i++) {
-                            let currentRowIdx = startRow + i;
-                            let cellLeft = jsonV2[currentRowIdx]?.[8];   // Cột I
-                            let cellRight = jsonV2[currentRowIdx]?.[9];  // Cột J
-
-                            l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
-                            r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
-                        }
-                        state.currentMoneyLayoutV2 = l2.concat(r2);
-
-                        for (let qIdx = 1; qIdx < jsonV2.length; qIdx++) {
-                            if (!jsonV2[qIdx] || !jsonV2[qIdx][0] || String(jsonV2[qIdx][0]).trim() === "" || String(jsonV2[qIdx][0]).trim() === "Chủ đề") continue;
-                            state.round2TopicsData.push({
-                                topic: String(jsonV2[qIdx][0]).trim(),
-                                A: { text: jsonV2[qIdx][1] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][4]).trim() },
-                                B: { text: jsonV2[qIdx][2] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][5]).trim() },
-                                C: { text: jsonV2[qIdx][3] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][6]).trim() }
-                            });
-                        }
-                    }
-                }
-
-                state.currentRoundIndexR1 = 0;
-                state.currentRoundIndexR2 = 0;
-                state.displayClasses = ['hide-money'];
-                state.lastAction = 'loadExcel';
-
-                isFirstTopicLoad = true;
-                loadRoundData();
-                sendUpdate();
-
-                const successMsg = `NẠP ĐỀ THÀNH CÔNG!\n- Vòng 1: ${state.round1TopicsData.length} chủ đề.\n- Vòng 2: ${state.round2TopicsData.length} chủ đề.`;
-                socket.emit('trigger-popup', successMsg);
-                showControllerAlert(successMsg);
-                event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
+            event.target.value = '';
         }
 
-        function controlMHC(status) {
-            state.showMHC = status;
-            state.lastAction = 'mhc';
-            sendUpdate();
-        }
+        function loadRoundData() {
+            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'F12') { e.preventDefault(); }
-                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
-                if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
-            });
-            document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-
-            sendUpdate();
-
-            if (document.getElementById('txtTotalPrize')) {
-                document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
+            if (targetList && targetList.length > 0 && targetIdx < targetList.length) {
+                const round = targetList[targetIdx];
+                state.currentRoundData = {
+                    topic: round.topic.toUpperCase(),
+                    A: round.A, B: round.B, C: round.C
+                };
             }
-        });
+        }
+
+        function closeAndMarkUsed(choice) {
+            if (!state.usedChoices) state.usedChoices = {};
+            state.usedChoices[choice] = true;
+            state.lastAction = 'close-choice';
+            sendUpdate();
+        }
+
+        function toggleSo5(checked) {
+            state.isSo5Checked = checked;
+            if (checked && state.excelRawDataV2) {
+                updateMoneyLayoutV2ByCheck();
+            }
+            state.lastAction = 'toggle-so5';
+            sendUpdate();
+        }
+
+        function updateMoneyLayoutV2ByCheck() {
+        }
+
+        function controlMHC(show) {
+            state.showMHC = show;
+            state.lastAction = show ? 'show-mhc' : 'hide-mhc';
+            sendUpdate();
+        }
     </script>
 </body>
 

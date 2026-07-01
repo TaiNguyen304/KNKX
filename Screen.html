@@ -9,7 +9,7 @@
         * {
             font-weight: bold !important;
             user-select: none;
-            -webkit-user-select: none; 
+            -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
         }
@@ -650,13 +650,20 @@
                     box.classList.add('money-box-animate');
                     box.style.animationDelay = `${idx * 0.1}s`;
 
-                    // BẮT SỰ KIỆN PHÁT ÂM THANH DING CHO TỪNG Ô
+                    // BẮT SỰ KIỆN PHÁT ÂM THANH DING CHO TỪNG Ô NGAY LẬP TỨC TỪ CACHE
                     box.addEventListener('animationstart', () => {
-                        // Đảm bảo đúng phiên render hiện tại và ô này chưa từng được phát ding ở lượt mở bảng này
                         if (thisSession === currentRenderSession && !activeDingIndexes.has(idx)) {
                             activeDingIndexes.add(idx);
-                            const snd = new Audio('ding.mp3');
-                            snd.play().catch(err => console.log("Trình duyệt chặn phát âm thanh tự động:", err));
+
+                            // Lấy trực tiếp từ audioCache đã preload sẵn để loại bỏ độ trễ phản hồi
+                            if (audioCache['ding.mp3']) {
+                                const cloneDing = audioCache['ding.mp3'].cloneNode();
+                                cloneDing.volume = 1;
+                                cloneDing.play().catch(err => console.log("Lỗi phát ding:", err));
+                            } else {
+                                const snd = new Audio('ding.mp3');
+                                snd.play().catch(err => console.log(err));
+                            }
                         }
                     });
 

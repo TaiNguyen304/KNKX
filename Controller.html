@@ -608,6 +608,7 @@
                 <button class="btn btn-sound" onclick="emitSound('theme_short.mp3')">Nhạc nền ngắn</button>
                 <button class="btn btn-sound" onclick="emitSound('value_decrease.mp3')">Giảm điểm</button>
                 <button class="btn btn-sound" onclick="emitSound('welcome_contestant.mp3')">Chào đón người chơi</button>
+                <button class="btn btn-sound" onclick="emitSound('pass.mp3')">Hoàn thành câu</button>
             </div>
             <div class="controls-row">
                 <button class="btn btn-stop-sound" onclick="emitStopSound()">Dừng âm thanh</button>
@@ -1108,7 +1109,6 @@
         function closeAndMarkUsed(choice) {
             state.usedChoices[choice] = true;
             state.activeQuestion = null;
-            emitSound('pass.mp3');
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
             state.lastAction = 'closeChoice';
             sendUpdate();

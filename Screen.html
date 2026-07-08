@@ -471,6 +471,26 @@
             align-items: center;
             flex-direction: column;
         }
+
+        @keyframes moneyCloseOpen {
+            0% {
+                transform: scaleX(1);
+            }
+
+            50% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        .money-animate-click {
+            animation: moneyCloseOpen 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            transform-origin: center !important;
+            /* Đảm bảo đóng mở đúng tâm */
+        }
     </style>
 </head>
 
@@ -614,7 +634,32 @@
                 state.displayClasses.forEach(cls => board.classList.add(cls));
             }
 
+            // 1. CẬP NHẬT CHỮ HIỂN THỊ TIỀN TỔNG TRƯỚC
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+
+            // 2. CHÈN ĐOẠN KIỂM TRA ANIMATION CHO Ô TIỀN TỔNG NGAY TẠI ĐÂY
+            const mainPrizeBox = document.querySelector('.main-prize');
+            if (mainPrizeBox && state.lastAction === 'moneyAnim') {
+                // Kích hoạt hiệu ứng đóng mở từ tâm cho ô tiền tổng bằng CSS class
+                mainPrizeBox.classList.remove('money-animate-click');
+                void mainPrizeBox.offsetWidth; // Kỹ thuật ép trình duyệt reflow nhằm khởi động lại animation
+                mainPrizeBox.classList.add('money-animate-click');
+
+                // Đồng thời phát soundboard âm thanh value_increase.mp3
+                if (typeof audioCache !== 'undefined' && audioCache['value_increase.mp3']) {
+                    const cloneSound = audioCache['value_increase.mp3'].cloneNode();
+                    cloneSound.volume = 1;
+                    cloneSound.play().catch(err => console.log("Lỗi phát nhạc từ cache:", err));
+                } else {
+                    const snd = new Audio('value_increase.mp3');
+                    snd.play().catch(err => console.log(err));
+                }
+
+                // Tự động gỡ bỏ class khi kết thúc hiệu ứng 0.6s để sẵn sàng cho lần bấm tiếp theo
+                setTimeout(() => {
+                    mainPrizeBox.classList.remove('money-animate-click');
+                }, 600);
+            }
 
             const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
 

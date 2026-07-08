@@ -33,6 +33,7 @@ let gameState = {
     currentMoneyLayoutV1: ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"],
     currentMoneyLayoutV2: ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"],
     isSo5Checked: false,
+    moneyAnimationChecked: false,
     moneyGridStateV1: {}, 
     moneyGridStateV2: {},   
     symbolBoxesStateV1: {}, 

@@ -952,7 +952,7 @@
                 }
                 state.lastAction = 'hide';
             } else if (action === 'reset') {
-                // YÊU CẦU 2: Cập nhật số tiền tổng theo đúng con số trong textbox thay vì gán bằng 0
+                // Cập nhật số tiền tổng theo đúng con số trong textbox thay vì gán bằng 0
                 const txtPrizeElem = document.getElementById('txtTotalPrize');
                 if (txtPrizeElem) {
                     let cleanVal = txtPrizeElem.value.replace(/[^0-9]/g, '');
@@ -968,16 +968,15 @@
                 state.usedChoices = { A: false, B: false, C: false };
                 state.activeQuestion = null;
 
-                // Reset layout bảng tiền Vòng 1 về mặc định
-                state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
-
-                // YÊU CẦU 1: Xử lý reset layout bảng tiền Vòng 2 dựa theo Checkbox số 5
-                if (state.currentActiveRound === 2 && state.excelRawDataV2) {
-                    // Đang dùng bảng nào (theo checkbox số 5) thì khi reset nạp lại bảng đấy từ Excel
-                    updateMoneyLayoutV2ByCheck();
-                } else {
-                    // Nếu chưa có dữ liệu Excel hoặc ở vòng 1, trả về mặc định
-                    state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+                // XỬ LÝ RESET BẢNG TIỀN THEO EXCEL CHO CẢ 2 VÒNG
+                if (state.currentActiveRound === 1) {
+                    updateMoneyLayoutV1OnReset();
+                } else if (state.currentActiveRound === 2) {
+                    if (state.excelRawDataV2) {
+                        updateMoneyLayoutV2ByCheck();
+                    } else {
+                        state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+                    }
                 }
 
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
@@ -1232,6 +1231,23 @@
 
         function triggerExcelInput() { document.getElementById('excelInput').click(); }
 
+        // Hàm bổ trợ cập nhật lại mốc tiền Vòng 1 từ dữ liệu Excel đã nạp khi Reset
+        function updateMoneyLayoutV1OnReset() {
+            if (!state.excelRawDataV1 || state.excelRawDataV1.length === 0) {
+                state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
+                return;
+            }
+            let l1 = [], r1 = [];
+            for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
+                let cellLeft = state.excelRawDataV1[rowIdx]?.[8];
+                let cellRight = state.excelRawDataV1[rowIdx]?.[9];
+
+                l1.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V1[rowIdx]);
+                r1.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V1[rowIdx + 6]);
+            }
+            state.currentMoneyLayoutV1 = l1.concat(r1);
+        }
+
         // Hàm bổ trợ cập nhật lại mốc tiền Vòng 2 khi thay đổi trạng thái check Số 5 công tắc
         function updateMoneyLayoutV2ByCheck() {
             if (!state.excelRawDataV2 || state.excelRawDataV2.length === 0) return;
@@ -1301,6 +1317,9 @@
                 if (fV1) {
                     const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
                     if (jsonV1.length > 0) {
+                        // LƯU DỮ LIỆU GỐC VÒNG 1 VÀO STATE ĐỂ RE-LOAD KHI RESET
+                        state.excelRawDataV1 = jsonV1;
+
                         for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
                             let cellLeft = jsonV1[rowIdx]?.[8];
                             let cellRight = jsonV1[rowIdx]?.[9];

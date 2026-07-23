@@ -41,7 +41,31 @@
             margin-bottom: 15px;
         }
 
+        .prize-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 450px;
+            height: 60px;
+            gap: 10px;
+        }
+
+        .sign-img {
+            height: 60px;
+            width: 60px;
+            object-fit: contain;
+            display: none;
+            z-index: 1;
+        }
+
+        .prize-container.has-signs .sign-img {
+            display: block;
+        }
+
         .main-prize {
+            position: relative;
+            z-index: 2;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 450px;
@@ -52,6 +76,12 @@
             color: #000000;
             font-size: 28px;
             cursor: pointer;
+            box-sizing: border-box;
+            transition: width 0.3s ease;
+        }
+
+        .prize-container.has-signs .main-prize {
+            width: 310px;
         }
 
         .symbols-row {
@@ -204,8 +234,7 @@
         }
 
         .game-board.round-2-mode .question-box {
-            padding: 10px 15px 10px 15px !important;
-            transform-origin: left center;
+            padding: 10px 15px !important;
         }
 
         .question-content {
@@ -278,7 +307,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transform-origin: center;
         }
 
         .round2-answer-text {
@@ -288,7 +316,6 @@
             text-transform: uppercase;
         }
 
-        /* Khung chứa 2 cụm nút nằm ngang */
         .panels-container {
             display: flex;
             flex-direction: row;
@@ -296,7 +323,6 @@
             justify-content: center;
             align-items: flex-start;
             width: 1060px;
-            /* 520px * 2 + 20px gap */
             max-width: 100%;
         }
 
@@ -347,6 +373,10 @@
             color: white !important;
         }
 
+        .btn-sign {
+            background-color: blue !important;
+        }
+
         .btn-round-toggle {
             background-color: blue !important;
         }
@@ -376,7 +406,6 @@
         .btn-reset {
             background-color: #ff00cc !important;
             color: #fff !important;
-            text-shadow: 0 0 5px #fff;
         }
 
         .btn-money-ctrl {
@@ -387,7 +416,6 @@
         .btn-sound {
             background-color: #800080 !important;
             color: #ffffff !important;
-            font-weight: bold !important;
             border: 1px solid #fff;
             height: 40px;
             min-width: 150px;
@@ -397,14 +425,12 @@
         .btn-stop-sound {
             background-color: #ff0000 !important;
             color: #ffffff !important;
-            font-weight: bold !important;
             border: 2px solid #fff;
             height: 45px;
             width: 100%;
             font-size: 14px;
             margin-top: 5px;
             text-transform: uppercase;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
         .set-prize-input {
@@ -417,7 +443,6 @@
             text-align: center;
             background-color: #fff;
             color: #000;
-            box-sizing: border-box;
         }
 
         .input-popup-overlay {
@@ -439,7 +464,6 @@
             padding: 20px;
             border-radius: 8px;
             width: 320px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
             text-align: center;
         }
 
@@ -464,58 +488,23 @@
         .popup-actions .btn {
             flex: 1;
         }
-
-        @keyframes fadeInUpMoney {
-            0% {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .money-box-animate {
-            opacity: 0;
-            animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        @keyframes moneyCloseOpen {
-            0% {
-                transform: scaleX(1);
-            }
-
-            50% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
-        }
-
-        .money-animate-click {
-            animation: moneyCloseOpen 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: center !important;
-        }
     </style>
 </head>
 
 <body>
-
     <div class="game-board hide-money" id="gameBoard">
-        <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+        <div class="prize-container" id="prizeContainer">
+            <img src="daucong.png" id="leftSignImg" class="sign-img">
+            <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+            <img src="daucong.png" id="rightSignImg" class="sign-img">
+        </div>
         <div class="symbols-row" id="symbolsRow"></div>
 
         <div class="bottom-area">
             <div class="money-grid" id="moneyGrid"></div>
-
             <div class="topic-container" id="topicContainer">
                 <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
             </div>
-
             <div class="choices-column" id="choicesColumn">
                 <div class="choice-box" id="choiceA">
                     <div class="choice-text">A</div>
@@ -527,7 +516,6 @@
                     <div class="choice-text">C</div>
                 </div>
             </div>
-
             <div class="question-area" id="questionArea">
                 <div class="question-box" id="questionBox">
                     <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
@@ -537,7 +525,6 @@
                     <div class="ans-btn" id="falseBtn">SAI</div>
                 </div>
             </div>
-
             <div class="round2-answer-container" id="round2AnswerContainer">
                 <div class="round2-answer-box" id="round2AnswerBox">
                     <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
@@ -547,13 +534,10 @@
     </div>
 
     <div class="panels-container">
-
         <div class="controls-panel">
             <div class="controls-row" style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-                <button class="btn btn-round-toggle" style="font-weight: bold !important;"
-                    onclick="controlMHC(true)">HIỆN MHC</button>
-                <button class="btn btn-round-toggle" style="font-weight: bold !important;"
-                    onclick="controlMHC(false)">ẨN MHC</button>
+                <button class="btn btn-round-toggle" onclick="controlMHC(true)">HIỆN MHC</button>
+                <button class="btn btn-round-toggle" onclick="controlMHC(false)">ẨN MHC</button>
                 <button class="btn btn-money-ctrl" onclick="moneyGridControl('show')">HIỆN BẢNG TIỀN</button>
                 <button class="btn btn-money-ctrl" onclick="moneyGridControl('hide')">ẨN BẢNG TIỀN</button>
                 <button class="btn btn-money-ctrl" onclick="moneyGridControl('reset')">RESET BẢNG TIỀN</button>
@@ -561,6 +545,13 @@
                     <input type="text" id="txtTotalPrize" class="set-prize-input" placeholder="Set tiền tổng..."
                         oninput="handlePrizeInput(this)">
                 </div>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-sign" onclick="setSideSign('daucong.png')">Hiện dấu cộng</button>
+                <button class="btn btn-sign" onclick="setSideSign('dautru.png')">Hiện dấu trừ</button>
+                <button class="btn btn-sign" onclick="setSideSign('daunhan.png')">Hiện dấu nhân</button>
+                <button class="btn btn-sign" onclick="setSideSign('dauchia.png')">Hiện dấu chia</button>
             </div>
 
             <div class="controls-row">
@@ -595,15 +586,13 @@
             <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2);">
                 <label style="font-size: 18px; color: #39ff14; cursor: pointer;">
                     <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
-                        style="transform: scale(1.5); margin-right: 10px;">
-                    Số 5
+                        style="transform: scale(1.5); margin-right: 10px;"> Số 5
                 </label>
             </div>
             <div style="margin: 5px 0;">
                 <label style="color: #00ffff; font-size: 16px; cursor: pointer;">
                     <input type="checkbox" id="chkMoneyAnim" onchange="toggleMoneyAnim(this.checked)"
-                        style="transform: scale(1.3); margin-right: 5px;">
-                    Animation Tiền
+                        style="transform: scale(1.3); margin-right: 5px;"> Animation Tiền
                 </label>
             </div>
             <div class="controls-row">
@@ -640,7 +629,6 @@
                 <button class="btn btn-stop-sound" onclick="emitStopSound()">Dừng âm thanh</button>
             </div>
         </div>
-
     </div>
 
     <div class="input-popup-overlay" id="inputPopupOverlay">
@@ -689,12 +677,13 @@
     <script>
         const socket = io('https://knkx.onrender.com');
 
-        const DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
-        const DEFAULT_LAYOUT_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+        let DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
+        let DEFAULT_LAYOUT_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
 
         let state = {
             currentActiveRound: 1,
             globalTotalPrize: 0,
+            activeSideSign: null,
             currentMoneyLayoutV1: [...DEFAULT_LAYOUT_V1],
             currentMoneyLayoutV2: [...DEFAULT_LAYOUT_V2],
             moneyGridStateV1: {},
@@ -712,51 +701,18 @@
             currentRoundIndexR1: 0,
             currentRoundIndexR2: 0,
             showMHC: true,
-            lastAction: '' // Lưu trữ hành động gần nhất gửi sang Screen
+            lastAction: ''
         };
 
         let isFirstTopicLoad = true;
-        let lastHideMoneyStateCtrl = true;
 
+        function emitSound(soundName) { socket.emit('trigger-sound', { sound: soundName }); }
+        function emitStopSound() { socket.emit('trigger-sound', { sound: 'stop_all' }); }
 
-        const SHORT_SOUNDS = [
-            'reveal_amount.mp3',
-            'round_start.mp3',
-            'theme_short.mp3',
-            'ding.mp3'
-        ];
-
-        // Object lưu trữ các Audio đã được preload sẵn
-        const audioCache = {};
-
-        // Tự động khởi tạo và preload tất cả các âm thanh ngắn ngay khi load trang
-        SHORT_SOUNDS.forEach(soundName => {
-            const audio = new Audio(soundName);
-            audio.preload = 'auto';
-            audioCache[soundName] = audio;
-        });
-
-        // Hàm emitSound cập nhật để phát ngay lập tức không delay trên máy Controller (nếu cần nghe)
-        function emitSound(soundName) {
-            socket.emit('trigger-sound', { sound: soundName });
-
-            // Nếu Controller muốn phát ra tiếng không delay để Host nghe thấy trên máy mình:
-            if (audioCache[soundName]) {
-                const audio = audioCache[soundName];
-                audio.currentTime = 0; // Tua nhanh về đầu để sẵn sàng phát lại liên tục
-                audio.play().catch(e => console.log("Chờ tương tác người dùng để phát âm thanh:", e));
-            }
-        }
-
-        function emitStopSound() {
-            socket.emit('trigger-sound', { sound: 'stop_all' });
-            // Dừng âm thanh cục bộ trên máy controller nếu có
-            SHORT_SOUNDS.forEach(soundName => {
-                if (audioCache[soundName]) {
-                    audioCache[soundName].pause();
-                    audioCache[soundName].currentTime = 0;
-                }
-            });
+        function setSideSign(signImg) {
+            state.activeSideSign = signImg;
+            state.lastAction = 'setSign';
+            sendUpdate();
         }
 
         function showControllerAlert(msg) {
@@ -771,12 +727,10 @@
         function handlePrizeInput(inputElement) {
             let cleanVal = inputElement.value.replace(/[^0-9]/g, '');
             let numVal = parseInt(cleanVal, 10) || 0;
-
             state.globalTotalPrize = numVal;
             inputElement.value = cleanVal ? formatNumberWithDots(cleanVal) : '';
-
             document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
-            socket.emit('update-game-state', state);
+            sendUpdate();
         }
 
         function sendUpdate() {
@@ -784,17 +738,15 @@
             renderSymbolsRow();
             updateUI();
             socket.emit('update-game-state', state);
+            if (state.lastAction !== '') {
+                state.lastAction = '';
+            }
         }
 
         socket.on('sync-full-state', (serverState) => {
-            // 1. Kiểm tra sự thay đổi của checkbox Số 5 trước khi cập nhật state mới
             const isSo5Changed = (state && state.isSo5Checked !== serverState.isSo5Checked);
-
-            // 2. Gán đồng bộ hoàn toàn dữ liệu từ Server làm chuẩn gốc
             state = serverState;
 
-            // 3. Nếu state chưa có dữ liệu câu hỏi hiện tại (do vừa nạp Excel xong hoặc chuyển vòng)
-            // nhưng đã có danh sách đề bài lưu trên hệ thống, tiến hành nạp câu hỏi cho index hiện tại
             if (!state.currentRoundData) {
                 let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
                 let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
@@ -808,23 +760,17 @@
                 }
             }
 
-            // 4. Đồng bộ trạng thái hiển thị của checkbox Số 5 trên giao diện
             const chkSo5 = document.getElementById('chkSo5');
-            if (chkSo5) {
-                chkSo5.checked = !!state.isSo5Checked;
-            }
+            if (chkSo5) chkSo5.checked = !!state.isSo5Checked;
 
-            // 5. Nếu trạng thái Số 5 thay đổi động, tính toán lại mốc tiền Vòng 2
             if (isSo5Changed && state.excelRawDataV2) {
-                if (typeof updateMoneyLayoutV2ByCheck === 'function') {
-                    updateMoneyLayoutV2ByCheck();
-                }
+                updateMoneyLayoutV2ByCheck();
             }
 
             if (document.getElementById('chkMoneyAnim')) {
                 document.getElementById('chkMoneyAnim').checked = !!state.moneyAnimationChecked;
             }
-            // 6. Render và cập nhật lại toàn bộ giao diện điều khiển
+
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
@@ -838,13 +784,24 @@
                 state.displayClasses.forEach(cls => board.classList.add(cls));
             }
 
-            document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+            const container = document.getElementById('prizeContainer');
+            const leftImg = document.getElementById('leftSignImg');
+            const rightImg = document.getElementById('rightSignImg');
 
+            if (state.activeSideSign) {
+                leftImg.src = state.activeSideSign;
+                rightImg.src = state.activeSideSign;
+                container.classList.add('has-signs');
+            } else {
+                container.classList.remove('has-signs');
+            }
+
+            document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
             document.getElementById('btnRound1').classList.toggle('active-round', state.currentActiveRound === 1);
             document.getElementById('btnRound2').classList.toggle('active-round', state.currentActiveRound === 2);
             document.getElementById('v2PrizeSetter').style.display = state.currentActiveRound === 2 ? 'block' : 'none';
 
-            document.getElementById('topicText').innerText = state.currentRoundData.topic;
+            document.getElementById('topicText').innerText = state.currentRoundData ? state.currentRoundData.topic : '';
 
             ['A', 'B', 'C'].forEach(ch => {
                 const cBox = document.getElementById(`choice${ch}`);
@@ -864,7 +821,6 @@
                 document.getElementById('questionContent').innerText = '';
             }
 
-            // Đồng bộ trực quan toàn bộ Graphic công bố đáp án Vòng 2 (Gồm Text, Màu chữ, Hình nền kết quả)
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
             if (r2Box && r2Txt && state.round2CtrlState) {
@@ -883,10 +839,6 @@
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
             const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
 
-            const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
-            const shouldAnimate = (lastHideMoneyStateCtrl === true && isCurrentlyHidden === false);
-            lastHideMoneyStateCtrl = isCurrentlyHidden;
-
             layout.forEach((val, idx) => {
                 const box = document.createElement('div');
                 box.className = 'money-box';
@@ -894,20 +846,13 @@
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
 
-                if (shouldAnimate) {
-                    box.classList.add('money-box-animate');
-                    box.style.animationDelay = `${idx * 0.1}s`;
-                }
-
                 box.onclick = () => {
                     if (box.classList.contains('closed')) return;
-
                     Object.keys(currentGridState).forEach(k => {
                         if (currentGridState[k] === 'selected') delete currentGridState[k];
                     });
-
                     currentGridState[idx] = 'selected';
-                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
+                    state.lastAction = 'select';
                     sendUpdate();
                 };
                 grid.appendChild(box);
@@ -929,13 +874,11 @@
 
                 box.onclick = () => {
                     if (box.classList.contains('closed')) return;
-
                     Object.keys(currentSymbolState).forEach(k => {
                         if (currentSymbolState[k] === 'selected') delete currentSymbolState[k];
                     });
-
                     currentSymbolState[idx] = 'selected';
-                    state.lastAction = 'select'; // BÁO HIỆU: Chỉ chọn ô, Screen không chạy lại hiệu ứng lần lượt
+                    state.lastAction = 'select';
                     sendUpdate();
                 };
                 container.appendChild(box);
@@ -944,15 +887,19 @@
 
         function moneyGridControl(action) {
             if (action === 'show') {
+                if (state.currentActiveRound === 1 && state.excelRawDataV1) {
+                    updateMoneyLayoutV1OnReset();
+                } else if (state.currentActiveRound === 2 && state.excelRawDataV2) {
+                    updateMoneyLayoutV2ByCheck();
+                }
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-                state.lastAction = 'show'; // BÁO HIỆU: Hiện bảng tiền lần lượt
+                state.lastAction = 'show';
             } else if (action === 'hide') {
                 if (!state.displayClasses.includes('hide-money')) {
                     state.displayClasses.push('hide-money');
                 }
                 state.lastAction = 'hide';
             } else if (action === 'reset') {
-                // Cập nhật số tiền tổng theo đúng con số trong textbox thay vì gán bằng 0
                 const txtPrizeElem = document.getElementById('txtTotalPrize');
                 if (txtPrizeElem) {
                     let cleanVal = txtPrizeElem.value.replace(/[^0-9]/g, '');
@@ -967,20 +914,17 @@
                 state.symbolBoxesStateV2 = {};
                 state.usedChoices = { A: false, B: false, C: false };
                 state.activeQuestion = null;
+                state.activeSideSign = null;
 
-                // XỬ LÝ RESET BẢNG TIỀN THEO EXCEL CHO CẢ 2 VÒNG
                 if (state.currentActiveRound === 1) {
                     updateMoneyLayoutV1OnReset();
                 } else if (state.currentActiveRound === 2) {
-                    if (state.excelRawDataV2) {
-                        updateMoneyLayoutV2ByCheck();
-                    } else {
-                        state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
-                    }
+                    if (state.excelRawDataV2) updateMoneyLayoutV2ByCheck();
+                    else state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
                 }
 
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
-                state.lastAction = 'reset'; // BÁO HIỆU: Reset bảng tiền đồng loạt
+                state.lastAction = 'reset';
             }
             sendUpdate();
         }
@@ -994,6 +938,7 @@
 
             state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
+            state.activeSideSign = null;
             state.lastAction = 'hide';
             isFirstTopicLoad = true;
             loadRoundData();
@@ -1015,7 +960,6 @@
                 }
                 loadRoundData();
                 state.usedChoices = { A: false, B: false, C: false };
-                // Reset trạng thái hiển thị của câu hỏi cũ khi chính thức sang chủ đề mới
                 state.activeQuestion = null;
                 state.round1CtrlState = { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" };
                 state.round2CtrlState = { text: 'ĐÁP ÁN', isCorrect: true, backgroundImage: "url('Whitebar2.png')", textColor: "#000000" };
@@ -1040,9 +984,7 @@
             );
             state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
             state.activeQuestion = null;
-
-            state.lastAction = 'back'; // BÁO HIỆU: Quay lại bảng tiền lần lượt
-
+            state.lastAction = 'back';
             sendUpdate();
         }
 
@@ -1168,24 +1110,13 @@
                 currentGridState[mIdx] = 'closed';
                 currentSymbolState[sIdx] = 'closed';
 
-                // --- KIỂM TRA CHECKBOX ANIMATION TIỀN TẠI ĐÂY ---
                 if (state.moneyAnimationChecked) {
-                    state.lastAction = 'moneyAnim'; // Báo hiệu cho Screen chạy animation + phát sound
-
-                    // Kích hoạt hiệu ứng ngay trên ô tiền tổng của Controller (id="txtTotalPrize")
-                    const controllerPrizeEl = document.getElementById('txtTotalPrize');
-                    if (controllerPrizeEl) {
-                        controllerPrizeEl.classList.remove('money-animate-click');
-                        void controllerPrizeEl.offsetWidth; // Trigger reflow để restart animation
-                        controllerPrizeEl.classList.add('money-animate-click');
-                        setTimeout(() => {
-                            controllerPrizeEl.classList.remove('money-animate-click');
-                        }, 600);
-                    }
+                    state.lastAction = (sign === '+' || sign === '*') ? 'moneyAnim_increase' : 'moneyAnim_decrease';
                 } else {
-                    state.lastAction = 'calculate'; // Giữ nguyên hành động tĩnh như cũ
+                    state.lastAction = 'calculate';
                 }
 
+                state.activeSideSign = null;
                 sendUpdate();
             }
         }
@@ -1195,10 +1126,10 @@
         }
 
         function executeGameReset() {
-            document.getElementById('confirmResetOverlay').style.none;
             document.getElementById('confirmResetOverlay').style.display = 'none';
 
             state.globalTotalPrize = 0;
+            state.activeSideSign = null;
             state.moneyGridStateV1 = {};
             state.moneyGridStateV2 = {};
             state.symbolBoxesStateV1 = {};
@@ -1211,13 +1142,11 @@
             state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
             state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
 
-            if (state.currentActiveRound === 1) {
-                state.currentRoundIndexR1 = 0;
-            } else {
-                state.currentRoundIndexR2 = 0;
-            }
+            if (state.currentActiveRound === 1) state.currentRoundIndexR1 = 0;
+            else state.currentRoundIndexR2 = 0;
+
             state.showMHC = true;
-            state.lastAction = 'reset'; // BÁO HIỆU: Hệ thống reset hoàn toàn
+            state.lastAction = 'reset';
             loadRoundData();
             sendUpdate();
 
@@ -1231,7 +1160,6 @@
 
         function triggerExcelInput() { document.getElementById('excelInput').click(); }
 
-        // Hàm bổ trợ cập nhật lại mốc tiền Vòng 1 từ dữ liệu Excel đã nạp khi Reset
         function updateMoneyLayoutV1OnReset() {
             if (!state.excelRawDataV1 || state.excelRawDataV1.length === 0) {
                 state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
@@ -1248,7 +1176,6 @@
             state.currentMoneyLayoutV1 = l1.concat(r1);
         }
 
-        // Hàm bổ trợ cập nhật lại mốc tiền Vòng 2 khi thay đổi trạng thái check Số 5 công tắc
         function updateMoneyLayoutV2ByCheck() {
             if (!state.excelRawDataV2 || state.excelRawDataV2.length === 0) return;
 
@@ -1266,16 +1193,12 @@
             state.currentMoneyLayoutV2 = l2.concat(r2);
         }
 
-        // Sửa lại hàm toggleSo5 (nút checkbox gọi đến) để kích hoạt cập nhật
         function toggleSo5(isChecked) {
             state.isSo5Checked = isChecked;
             state.lastAction = 'toggleSo5';
-
-            // Cập nhật lại mốc tiền cục bộ trước khi gửi đồng bộ đi các máy khác
             updateMoneyLayoutV2ByCheck();
-
             loadRoundData();
-            sendUpdate(); // Hàm gửi state lên server.js của bạn
+            sendUpdate();
         }
 
         function loadRoundData() {
@@ -1295,7 +1218,6 @@
                 B: round.B,
                 C: round.C
             };
-            // KHÔNG tự ý reset usedChoices, round1CtrlState hay round2CtrlState tại đây để tránh xung đột đa máy.
         }
 
         function handleExcel(event) {
@@ -1312,12 +1234,10 @@
                 let l1 = [], r1 = [];
                 let l2 = [], r2 = [];
 
-                // --- XỬ LÝ VÒNG 1 (Giữ nguyên logic của bạn) ---
                 const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
                 if (fV1) {
                     const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
                     if (jsonV1.length > 0) {
-                        // LƯU DỮ LIỆU GỐC VÒNG 1 VÀO STATE ĐỂ RE-LOAD KHI RESET
                         state.excelRawDataV1 = jsonV1;
 
                         for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
@@ -1341,24 +1261,17 @@
                     }
                 }
 
-                // --- XỬ LÝ VÒNG 2 (Sửa đổi động theo trạng thái Checkbox Số 5) ---
                 const fV2 = workbook.SheetNames.find(n => n.trim() === "Vòng 2");
                 if (fV2) {
                     const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
                     if (jsonV2.length > 0) {
-
-                        // LƯU ĐẦU ĐỀ RAW VÀO STATE ĐỂ SAU NÀY BẬT/TẮT CHECKBOX CÓ THỂ ĐỌC LẠI ĐƯỢC
                         state.excelRawDataV2 = jsonV2;
-
-                        // TÍNH TOÁN DÒNG BẮT ĐẦU DỰA TRÊN CHECKBOX SỐ 5
-                        // Nếu check: Hàng 10 đến 15 (Chỉ số mảng: 9 đến 14)
-                        // Nếu không check: Hàng 1 đến 6 (Chỉ số mảng: 0 đến 5)
                         const startRow = state.isSo5Checked ? 9 : 0;
 
                         for (let i = 0; i <= 5; i++) {
                             let currentRowIdx = startRow + i;
-                            let cellLeft = jsonV2[currentRowIdx]?.[8];   // Cột I
-                            let cellRight = jsonV2[currentRowIdx]?.[9];  // Cột J
+                            let cellLeft = jsonV2[currentRowIdx]?.[8];
+                            let cellRight = jsonV2[currentRowIdx]?.[9];
 
                             l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
                             r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
@@ -1405,17 +1318,9 @@
             state.lastAction = 'toggleAnim';
             sendUpdate();
         }
-
+ 
         window.addEventListener('DOMContentLoaded', () => {
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'F12') { e.preventDefault(); }
-                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
-                if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
-            });
-            document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-
             sendUpdate();
-
             if (document.getElementById('txtTotalPrize')) {
                 document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
             }

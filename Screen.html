@@ -9,9 +9,6 @@
         * {
             font-weight: bold !important;
             user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
         }
 
         body {
@@ -32,18 +29,89 @@
             align-items: center;
             font-family: 'Arial', sans-serif;
             gap: 10px;
+            transform: scale(1.5);
+            transform-origin: center center;
+        }
+
+        .prize-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 660px;
+            height: 85px;
+            gap: 15px;
+        }
+
+        .sign-img {
+            height: 85px;
+            width: 85px;
+            object-fit: contain;
+            display: none;
+            z-index: 1;
+        }
+
+        .prize-container.has-signs .sign-img {
+            display: block;
+        }
+
+        .prize-container.has-signs #leftSignImg {
+            animation: signSlideLeft 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .prize-container.has-signs #rightSignImg {
+            animation: signSlideRight 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
         .main-prize {
+            position: relative;
+            z-index: 2;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
-            width: 660px;
             height: 85px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #000;
             font-size: 42px;
+            box-sizing: border-box;
+            transform-origin: center center !important;
+            will-change: transform, width;
+            /* Dùng transition để xử lý mượt mà việc đổi size 460px <-> 660px mà không sinh lỗi giật */
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Kích hoạt animation thông qua thuộc tính dữ liệu để tránh xung đột class */
+        .main-prize[data-anim="active"] {
+            animation: moneyCloseOpen 0.6s linear forwards;
+        }
+
+        .prize-container.has-signs .main-prize {
+            width: 460px;
+            animation: stretch460 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Tách biệt hoàn toàn hiệu ứng thu phóng tiền thành một keyframes tuyến tính */
+        @keyframes moneyCloseOpen {
+            0% {
+                transform: scaleX(1);
+            }
+
+            50% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        .prize-container.has-signs .main-prize {
+            width: 460px;
+        }
+
+        .prize-container:not(.has-signs) .main-prize {
+            width: 660px;
         }
 
         .symbols-row {
@@ -66,9 +134,6 @@
         }
 
         .game-board.round-2-mode .symbol-box {
-            display: flex;
-            justify-content: center;
-            align-items: center;
             line-height: 1;
         }
 
@@ -195,6 +260,30 @@
             animation: fadeInText 0.2s ease-in-out forwards;
         }
 
+        .game-board.show-choices #choiceA {
+            animation-delay: 0s;
+        }
+
+        .game-board.show-choices #choiceB {
+            animation-delay: 0.25s;
+        }
+
+        .game-board.show-choices #choiceC {
+            animation-delay: 0.5s;
+        }
+
+        .game-board.show-choices #choiceA .choice-text {
+            animation-delay: 0.3s;
+        }
+
+        .game-board.show-choices #choiceB .choice-text {
+            animation-delay: 0.55s;
+        }
+
+        .game-board.show-choices #choiceC .choice-text {
+            animation-delay: 0.8s;
+        }
+
         .question-area {
             display: none;
             position: absolute;
@@ -217,8 +306,7 @@
         }
 
         .game-board.round-2-mode .question-box {
-            padding: 20px 30px 20px 30px !important;
-            transform-origin: left center;
+            padding: 20px 30px !important;
         }
 
         .question-content {
@@ -280,7 +368,6 @@
 
         .game-board.show-question .question-box {
             animation: stretchAcross 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: left center;
         }
 
         .game-board.show-question .question-content {
@@ -316,6 +403,141 @@
             text-align: center;
             opacity: 0;
             text-transform: uppercase;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-area {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-box {
+            animation: shrinkLeft 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .question-content {
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .choices-column {
+            display: none !important;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-box {
+            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+        }
+
+        .game-board.round-2-mode.show-r2-ans .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.6s forwards;
+        }
+
+        .game-board.round-2-mode.play-close .question-area {
+            display: none;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-box {
+            animation: shrinkToCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+        }
+
+        .game-board.round-2-mode.play-close .round2-answer-text {
+            opacity: 0 !important;
+        }
+
+        .game-board.round-2-mode.show-r2-result .question-area {
+            display: none;
+        }
+
+        .game-board.round-2-mode.show-r2-result .choices-column {
+            display: none !important;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-container {
+            display: block;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-box {
+            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-board.round-2-mode.show-r2-result .round2-answer-text {
+            animation: fadeInText 0.15s ease-in-out 0.3s forwards;
+        }
+
+        .mhc-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: transparent;
+            background-image: url('MHC.png');
+            background-size: cover;
+            background-position: center;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .money-box-animate {
+            opacity: 0;
+            animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Thẻ con chịu trách nhiệm chạy animation độc lập, không bị đè bởi class cha */
+        .money-text-inner {
+            display: inline-block;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        /* Khi kích hoạt hiệu ứng co giãn */
+        .money-text-inner[data-anim="active"] {
+            animation: moneyCloseOpenInner 0.6s linear forwards;
+        }
+
+        @keyframes moneyCloseOpenInner {
+            0% {
+                transform: scaleX(1);
+            }
+            50% {
+                transform: scaleX(0);
+            }
+            100% {
+                transform: scaleX(1);
+            }
+        }
+        
+        @keyframes signSlideLeft {
+            0% {
+                transform: translateX(100px) scale(0.5);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes signSlideRight {
+            0% {
+                transform: translateX(-100px) scale(0.5);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
         }
 
         @keyframes stretchAcross {
@@ -370,73 +592,6 @@
             }
         }
 
-        .game-board.round-2-mode.show-r2-ans .question-area {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .question-box {
-            animation: shrinkLeft 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .question-content {
-            opacity: 0;
-            transition: opacity 0.1s;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .choices-column {
-            display: none !important;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-box {
-            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
-        }
-
-        .game-board.round-2-mode.show-r2-ans .round2-answer-text {
-            animation: fadeInText 0.15s ease-in-out 0.6s forwards;
-        }
-
-        .game-board.round-2-mode.play-close .question-area {
-            display: none;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-box {
-            animation: shrinkToCenter 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
-            transform-origin: center !important;
-        }
-
-        .game-board.round-2-mode.play-close .round2-answer-text {
-            opacity: 0 !important;
-        }
-
-        .game-board.round-2-mode.show-r2-result .question-area {
-            display: none;
-        }
-
-        .game-board.round-2-mode.show-r2-result .choices-column {
-            display: none !important;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-container {
-            display: block;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-box {
-            animation: stretchFromCenter 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: center !important;
-        }
-
-        .game-board.round-2-mode.show-r2-result .round2-answer-text {
-            animation: fadeInText 0.15s ease-in-out 0.3s forwards;
-        }
-
         @keyframes fadeInUpMoney {
             0% {
                 opacity: 0;
@@ -449,30 +604,41 @@
             }
         }
 
-        .money-box-animate {
-            opacity: 0;
-            animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        @keyframes stretch460 {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
         }
 
-        /* Màn hình chờ chiếm Full Screen độc lập */
-        .mhc-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: none;
-            background-image: url('MHC.png');
-            background-size: cover;
-            background-position: center;
-            z-index: 99999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+        @keyframes stretch660 {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
         }
 
-        @keyframes moneyCloseOpen {
+        /* Hiệu ứng đóng mở đổi tiền dành riêng cho trường hợp KHÔNG có dấu */
+        @keyframes moneyCloseOpen660 {
+            0% { transform: scaleX(1); }
+            50% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+
+        /* Hiệu ứng đóng mở đổi tiền dành riêng cho trường hợp CÓ dấu */
+        @keyframes moneyCloseOpen460 {
+            0% { transform: scaleX(1); }
+            50% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+
+        /*@keyframes moneyCloseOpenSign {
             0% {
                 transform: scaleX(1);
             }
@@ -484,29 +650,25 @@
             100% {
                 transform: scaleX(1);
             }
-        }
-
-        .money-animate-click {
-            animation: moneyCloseOpen 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform-origin: center !important;
-            /* Đảm bảo đóng mở đúng tâm */
-        }
+        }*/
     </style>
 </head>
 
 <body>
     <div id="mhcOverlay" class="mhc-overlay"></div>
     <div class="game-board hide-money" id="gameBoard">
-        <div class="main-prize" id="totalPrize">0 $A</div>
+        <div class="prize-container" id="prizeContainer">
+            <img src="daucong.png" id="leftSignImg" class="sign-img">
+            <div class="main-prize" id="totalPrize">0 $A</div>
+            <img src="daucong.png" id="rightSignImg" class="sign-img">
+        </div>
         <div class="symbols-row" id="symbolsRow"></div>
 
         <div class="bottom-area">
             <div class="money-grid" id="moneyGrid"></div>
-
             <div class="topic-container" id="topicContainer">
                 <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
             </div>
-
             <div class="choices-column" id="choicesColumn">
                 <div class="choice-box" id="choiceA">
                     <div class="choice-text">A</div>
@@ -518,7 +680,6 @@
                     <div class="choice-text">C</div>
                 </div>
             </div>
-
             <div class="question-area" id="questionArea">
                 <div class="question-box" id="questionBox">
                     <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
@@ -528,7 +689,6 @@
                     <div class="ans-btn" id="falseBtn">SAI</div>
                 </div>
             </div>
-
             <div class="round2-answer-container" id="round2AnswerContainer">
                 <div class="round2-answer-box" id="round2AnswerBox">
                     <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
@@ -538,70 +698,51 @@
     </div>
 
     <script>
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'F12') { e.preventDefault(); }
-            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.key === 'U') { e.preventDefault(); }
-        });
-        document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-    </script>
-    <script>
         const socket = io('https://knkx.onrender.com');
 
-        // Mảng lưu trữ các đối tượng audio đang được phát để có thể dừng khi có lệnh
-        let activeAudios = [];
+        let audioUnlocked = false;
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            const dummy = new Audio();
+            dummy.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+            dummy.play().then(() => {
+                audioUnlocked = true;
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('keydown', unlockAudio);
+            }).catch(() => { });
+        }
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('keydown', unlockAudio);
 
-        // --- HỆ THỐNG CACHE & AUTO PRELOAD ÂM THANH NGẮN DƯỚI 10S ---
-        const SHORT_SOUNDS = [
-            'reveal_amount.mp3',
-            'round_start.mp3',
-            'theme_short.mp3',
-            'ding.mp3'
-        ];
-
+        const SHORT_SOUNDS = ['reveal_amount.mp3', 'round_start.mp3', 'theme_short.mp3', 'ding.mp3', 'value_increase.mp3', 'value_decrease.mp3'];
         const audioCache = {};
-        let currentBackgroundMusic = null; // Biến quản lý nhạc nền dài để dừng khi cần
+        let currentBackgroundMusic = null;
 
-        // Tiến hành tải trước vào bộ nhớ ngay khi mở màn hình Screen
         SHORT_SOUNDS.forEach(soundName => {
             const audio = new Audio(soundName);
             audio.preload = 'auto';
-            // Đảm bảo load dữ liệu âm thanh ngầm
-            audio.load();
             audioCache[soundName] = audio;
         });
 
-        // Lắng nghe sự kiện phát âm thanh đồng bộ từ server gửi xuống
         socket.on('play-sound-client', (data) => {
             if (!data || !data.sound) return;
-
             const soundName = data.sound;
-
-            // TRƯỜNG HỢP 1: Là âm thanh ngắn dưới 10 giây -> Phát ngay lập tức không delay
             if (audioCache[soundName]) {
-                const audio = audioCache[soundName];
-                audio.currentTime = 0; // Đưa về giây 0 (giúp bấm liên tục vẫn phát được ngay)
-                audio.play().catch(err => console.log("Lỗi phát âm thanh ngắn:", err));
-            }
-            // TRƯỜNG HỢP 2: Là các bản nhạc nền dài (trên 10 giây) -> Tạo luồng chạy bình thường
-            else {
-                // Nếu bài cũ đang chạy thì dừng lại trước khi đổi bài dài mới
-                if (currentBackgroundMusic) {
-                    currentBackgroundMusic.pause();
-                }
+                const cloneSound = audioCache[soundName].cloneNode();
+                cloneSound.volume = 1;
+                cloneSound.play().catch(err => { });
+            } else {
+                if (currentBackgroundMusic) currentBackgroundMusic.pause();
                 currentBackgroundMusic = new Audio(soundName);
-                currentBackgroundMusic.play().catch(err => console.log("Lỗi phát nhạc nền:", err));
+                currentBackgroundMusic.play().catch(err => { });
             }
         });
 
-        // Lắng nghe sự kiện dừng toàn bộ âm thanh
         socket.on('stop-all-sounds-client', () => {
-            // 1. Dừng nhạc nền dài
             if (currentBackgroundMusic) {
                 currentBackgroundMusic.pause();
                 currentBackgroundMusic.currentTime = 0;
             }
-            // 2. Dừng toàn bộ các âm thanh ngắn đang chạy dở
             SHORT_SOUNDS.forEach(soundName => {
                 if (audioCache[soundName]) {
                     audioCache[soundName].pause();
@@ -610,77 +751,98 @@
             });
         });
 
-        let lastHideMoneyState = true;
+        let wasHiddenBefore = true;
         let activeDingIndexes = new Set();
         let currentRenderSession = 0;
 
+        // Đảm bảo biến kiểm soát trạng thái chạy animation hoạt động độc lập
+        let isAnimatingMoney = false;
+
         socket.on('sync-full-state', (state) => {
-
-            // --- XỬ LÝ ẨN/HIỆN MÀN HÌNH CHỜ (MHC) ---
+            // 1. MHC Overlay
             const mhc = document.getElementById('mhcOverlay');
-            if (mhc) {
-                if (state.showMHC === undefined || state.showMHC === true) {
-                    mhc.style.display = 'flex';
-                } else {
-                    mhc.style.display = 'none';
-                }
-            }
+            if (mhc) mhc.style.display = (state.showMHC === undefined || state.showMHC === true) ? 'flex' : 'none';
 
-            // --- ĐỒNG BỘ CÁC THÀNH PHẦN KHÁC ---
+            // 2. Class Board
             const board = document.getElementById('gameBoard');
             board.className = "game-board";
             if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
-            if (state.displayClasses && state.displayClasses.length > 0) {
-                state.displayClasses.forEach(cls => board.classList.add(cls));
+            if (state.displayClasses) state.displayClasses.forEach(cls => board.classList.add(cls));
+
+            // 3. Side signs
+            const container = document.getElementById('prizeContainer');
+            const leftImg = document.getElementById('leftSignImg');
+            const rightImg = document.getElementById('rightSignImg');
+
+            if (state.activeSideSign) {
+                leftImg.src = state.activeSideSign;
+                rightImg.src = state.activeSideSign;
+                container.classList.add('has-signs');
+            } else {
+                container.classList.remove('has-signs');
             }
 
-            // 1. CẬP NHẬT CHỮ HIỂN THỊ TIỀN TỔNG TRƯỚC
-            document.getElementById('totalPrize').innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+            // 4. Kiểm soát tuyệt đối logic Animation Tiền trên Shape (Đã loại bỏ hoàn toàn xung đột 0.4s)
+            let mainPrizeBox = document.querySelector('.main-prize');
+            let totalPrizeEl = document.getElementById('totalPrize');
+            const hasAnimationTrigger = (state.lastAction === 'moneyAnim_increase' || state.lastAction === 'moneyAnim_decrease');
 
-            // 2. CHÈN ĐOẠN KIỂM TRA ANIMATION CHO Ô TIỀN TỔNG NGAY TẠI ĐÂY
-            const mainPrizeBox = document.querySelector('.main-prize');
-            if (mainPrizeBox && state.lastAction === 'moneyAnim') {
-                // Kích hoạt hiệu ứng đóng mở từ tâm cho ô tiền tổng bằng CSS class
-                mainPrizeBox.classList.remove('money-animate-click');
-                void mainPrizeBox.offsetWidth; // Kỹ thuật ép trình duyệt reflow nhằm khởi động lại animation
-                mainPrizeBox.classList.add('money-animate-click');
+            if (hasAnimationTrigger && !isAnimatingMoney) {
+                isAnimatingMoney = true;
+                const currentAnimType = state.lastAction;
 
-                // Đồng thời phát soundboard âm thanh value_increase.mp3
-                if (typeof audioCache !== 'undefined' && audioCache['value_increase.mp3']) {
-                    const cloneSound = audioCache['value_increase.mp3'].cloneNode();
+                // Tiêu thụ hành động ngay lập tức để chặn xung đột gói tin
+                socket.emit('consume-action');
+
+                // Phát âm thanh
+                const soundName = currentAnimType === 'moneyAnim_increase' ? 'value_increase.mp3' : 'value_decrease.mp3';
+                if (audioCache[soundName]) {
+                    const cloneSound = audioCache[soundName].cloneNode();
                     cloneSound.volume = 1;
-                    cloneSound.play().catch(err => console.log("Lỗi phát nhạc từ cache:", err));
-                } else {
-                    const snd = new Audio('value_increase.mp3');
-                    snd.play().catch(err => console.log(err));
+                    cloneSound.play().catch(e => { });
                 }
 
-                // Tự động gỡ bỏ class khi kết thúc hiệu ứng 0.6s để sẵn sàng cho lần bấm tiếp theo
+                // Chạy trực tiếp hiệu ứng đóng mở hình dáng
+                mainPrizeBox.style.animation = 'moneyCloseOpen 0.6s linear forwards';
+
+                // Đúng giây thứ 0.3 (khi shape co hẳn về 0), đổi text số tiền
                 setTimeout(() => {
-                    mainPrizeBox.classList.remove('money-animate-click');
+                    if (totalPrizeEl) {
+                        totalPrizeEl.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+                    }
+                }, 300);
+
+                // Sau khi kết thúc trọn vẹn 0.6s hiệu ứng, dọn dẹp thuộc tính sạch sẽ
+                setTimeout(() => {
+                    mainPrizeBox.style.animation = '';
+                    isAnimatingMoney = false;
                 }, 600);
+
+            } else {
+                // Nếu không trong tiến trình chạy hiệu ứng, cập nhật số tiền tĩnh bình thường
+                if (!isAnimatingMoney) {
+                    if (totalPrizeEl) {
+                        totalPrizeEl.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
+                    }
+                }
             }
 
+            // 5. Grid logic animation
             const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
+            let shouldAnimateGrid = false;
 
-            // Nếu bảng tiền bị ẩn đi, hoặc chuyển từ trạng thái ẨN sang HIỆN
-            if (isCurrentlyHidden || (isCurrentlyHidden === false && lastHideMoneyState === true)) {
+            if (wasHiddenBefore && !isCurrentlyHidden) {
+                shouldAnimateGrid = true;
                 activeDingIndexes.clear();
-                currentRenderSession++; // Tăng phiên làm việc để hủy bỏ các sự kiện âm thanh cũ
+                currentRenderSession++;
             }
-            lastHideMoneyState = isCurrentlyHidden;
+            wasHiddenBefore = isCurrentlyHidden;
 
-            // PHÂN TÍCH HÀNH ĐỘNG ĐỂ QUYẾT ĐỊNH HIỆU ỨNG TRỰC QUAN VÀ ÂM THANH
-            const isResetAction = (state.lastAction === 'reset');
-            const isShowOrBackAction = (state.lastAction === 'show' || state.lastAction === 'back');
-            // ĐIỀU CHỈNH CHÍNH: Chỉ cần bảng tiền KHÔNG ẩn và thuộc hành động show/back là chạy hiệu ứng 12 tiếng ding
-            const shouldAnimate = (!isCurrentlyHidden && isShowOrBackAction);
-
+            // 6. Draw Grid
             const grid = document.getElementById('moneyGrid');
             grid.innerHTML = '';
             const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
             const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
-
             const thisSession = currentRenderSession;
 
             layout.forEach((val, idx) => {
@@ -690,38 +852,25 @@
                 if (currentGridState[idx] === 'selected') box.classList.add('selected');
                 if (currentGridState[idx] === 'closed') box.classList.add('closed');
 
-                if (shouldAnimate && !isResetAction) {
-                    // HIỆN LẦN LƯỢT: Áp dụng CSS Animation Delay theo thứ tự ô
+                if (shouldAnimateGrid) {
                     box.classList.add('money-box-animate');
-                    box.style.animationDelay = `${idx * 0.1}s`;
+                    box.style.animationDelay = `${idx * 0.12}s`;
 
-                    // BẮT SỰ KIỆN PHÁT ÂM THANH DING CHO TỪNG Ô NGAY LẬP TỨC TỪ CACHE
                     box.addEventListener('animationstart', () => {
                         if (thisSession === currentRenderSession && !activeDingIndexes.has(idx)) {
                             activeDingIndexes.add(idx);
-
-                            // Lấy trực tiếp từ audioCache đã preload sẵn để loại bỏ độ trễ phản hồi
                             if (audioCache['ding.mp3']) {
                                 const cloneDing = audioCache['ding.mp3'].cloneNode();
                                 cloneDing.volume = 1;
-                                cloneDing.play().catch(err => console.log("Lỗi phát ding:", err));
-                            } else {
-                                const snd = new Audio('ding.mp3');
-                                snd.play().catch(err => console.log(err));
+                                cloneDing.play().catch(e => { });
                             }
                         }
                     });
-
-                } else {
-                    // HIỆN ĐỒNG LOẠT: Khi bảng bị ẩn hoặc Reset, hiện ngay lập tức không delay hiệu ứng
-                    box.style.opacity = '1';
-                    box.style.transform = 'none';
-                    box.style.animation = 'none';
                 }
                 grid.appendChild(box);
             });
 
-            // --- ĐỒNG BỘ ĐỀ BÀI VÀ CÁC THÀNH PHẦN KHÁC KHÔNG ĐỔI ---
+            // 7. Symbols Row
             const sRow = document.getElementById('symbolsRow');
             sRow.innerHTML = '';
             const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
@@ -736,6 +885,7 @@
                 sRow.appendChild(box);
             });
 
+            // 8. Texts & Topics
             if (state.currentRoundData && state.currentRoundData.topic) {
                 document.getElementById('topicText').innerText = state.currentRoundData.topic;
             } else {
@@ -754,8 +904,8 @@
                 document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
                 if (state.round1CtrlState) {
-                    document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'btn-answer';
-                    document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'btn-answer';
+                    document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
+                    document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'ans-btn';
                 }
             } else {
                 document.getElementById('questionContent').innerText = '';
@@ -764,7 +914,7 @@
             const r2Box = document.getElementById('round2AnswerBox');
             const r2Txt = document.getElementById('round2AnswerText');
             if (r2Box && r2Txt && state.round2CtrlState) {
-                r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('bar2.png')";
+                r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
                 r2Txt.innerText = state.round2CtrlState.text || '';
                 r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
             }

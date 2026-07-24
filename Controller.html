@@ -1318,13 +1318,39 @@
             state.lastAction = 'toggleAnim';
             sendUpdate();
         }
- 
+
         window.addEventListener('DOMContentLoaded', () => {
             sendUpdate();
             if (document.getElementById('txtTotalPrize')) {
                 document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
             }
         });
+
+        function disableDevTools() {
+            // 1. Chặn menu chuột phải (Context Menu)
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // 2. Chặn các phím tắt mở DevTools & View Source
+            document.addEventListener('keydown', (e) => {
+                if (
+                    e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+                    (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+                ) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+
+            // 3. Tự động xóa Console & vô hiệu hóa Console Output
+            setInterval(() => {
+                console.clear();
+            }, 1000);
+        }
+
+        // Bật tính năng chống DevTools ngay khi tải xong trang
+        window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>
 

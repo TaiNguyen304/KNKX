@@ -508,14 +508,16 @@
             0% {
                 transform: scaleX(1);
             }
+
             50% {
                 transform: scaleX(0);
             }
+
             100% {
                 transform: scaleX(1);
             }
         }
-        
+
         @keyframes signSlideLeft {
             0% {
                 transform: translateX(100px) scale(0.5);
@@ -624,21 +626,7 @@
             }
         }
 
-        /* Hiệu ứng đóng mở đổi tiền dành riêng cho trường hợp KHÔNG có dấu */
-        @keyframes moneyCloseOpen660 {
-            0% { transform: scaleX(1); }
-            50% { transform: scaleX(0); }
-            100% { transform: scaleX(1); }
-        }
-
-        /* Hiệu ứng đóng mở đổi tiền dành riêng cho trường hợp CÓ dấu */
-        @keyframes moneyCloseOpen460 {
-            0% { transform: scaleX(1); }
-            50% { transform: scaleX(0); }
-            100% { transform: scaleX(1); }
-        }
-
-        /*@keyframes moneyCloseOpenSign {
+        @keyframes moneyCloseOpen {
             0% {
                 transform: scaleX(1);
             }
@@ -650,7 +638,7 @@
             100% {
                 transform: scaleX(1);
             }
-        }*/
+        }
     </style>
 </head>
 
@@ -782,7 +770,7 @@
                 container.classList.remove('has-signs');
             }
 
-            // 4. Kiểm soát tuyệt đối logic Animation Tiền trên Shape (Đã loại bỏ hoàn toàn xung đột 0.4s)
+            // 4. Kiểm soát tuyệt đối logic Animation Tiền trên Shape
             let mainPrizeBox = document.querySelector('.main-prize');
             let totalPrizeEl = document.getElementById('totalPrize');
             const hasAnimationTrigger = (state.lastAction === 'moneyAnim_increase' || state.lastAction === 'moneyAnim_decrease');
@@ -802,7 +790,9 @@
                     cloneSound.play().catch(e => { });
                 }
 
-                // Chạy trực tiếp hiệu ứng đóng mở hình dáng
+                // Xóa animation cũ trước khi gán lại để đảm bảo animation luôn chạy lại từ đầu
+                mainPrizeBox.style.animation = 'none';
+                mainPrizeBox.offsetHeight; // Trigger reflow
                 mainPrizeBox.style.animation = 'moneyCloseOpen 0.6s linear forwards';
 
                 // Đúng giây thứ 0.3 (khi shape co hẳn về 0), đổi text số tiền
@@ -919,6 +909,32 @@
                 r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
             }
         });
+
+        function disableDevTools() {
+            // 1. Chặn menu chuột phải (Context Menu)
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // 2. Chặn các phím tắt mở DevTools & View Source
+            document.addEventListener('keydown', (e) => {
+                if (
+                    e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+                    (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+                ) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+
+            // 3. Tự động xóa Console & vô hiệu hóa Console Output
+            setInterval(() => {
+                console.clear();
+            }, 1000);
+        }
+
+        // Bật tính năng chống DevTools ngay khi tải xong trang
+        window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>
 

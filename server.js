@@ -59,20 +59,24 @@ let gameState = {
 
 /**
  * Encrypts and sanitizes gameState before broadcasting to Screen clients.
- * ANY hidden data, raw excel data, full topic datasets, and secret answers
- * are ALWAYS replaced with a single "🐧" symbol, regardless of content length.
+ * ANY hidden data, raw excel data, full topic datasets, secret answers, and unannounced 
+ * result statuses are ALWAYS replaced with a single "🐧" symbol or default safe values.
  */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
     const displayClasses = Array.isArray(state.displayClasses) ? state.displayClasses : [];
+    
+    // Cờ hiển thị từ Controller
     const isTopicShown = displayClasses.includes('show-topic');
     const isQuestionShown = displayClasses.includes('show-question');
-    const isR2AnsShown = displayClasses.includes('show-r2-ans');
-    const isR2ResultShown = displayClasses.includes('show-r2-result');
+    const isR1ResultShown = displayClasses.includes('show-r1-result'); // Cờ hiển thị kết quả Vòng 1
+    const isR2AnsShown = displayClasses.includes('show-r2-ans');       // Cờ hiển thị đáp án Vòng 2
+    const isR2ResultShown = displayClasses.includes('show-r2-result'); // Cờ hiển thị kết quả Vòng 2
+    
     const activeQ = state.activeQuestion;
 
-    // Build currentRoundData safely from scratch for Screen
+    // 1. Xử lý câu hỏi và chủ đề
     let sanitizedRoundData = {
         topic: isTopicShown && state.currentRoundData?.topic ? state.currentRoundData.topic : "🐧",
         A: { text: "🐧" },
@@ -85,26 +89,29 @@ function sanitizeStateForScreen(state) {
             if (state.currentRoundData[qKey]) {
                 const isThisActiveQ = (activeQ === qKey) && isQuestionShown;
                 sanitizedRoundData[qKey] = {
+                    // Chỉ gửi text câu hỏi khi đang active và bấm show-question
                     text: isThisActiveQ && state.currentRoundData[qKey].text ? state.currentRoundData[qKey].text : "🐧"
+                    // KHÔNG BAO GIỜ bao gồm 'correct' hay 'excelAnsRaw'
                 };
             }
         });
     }
 
-    // Build round2CtrlState safely from scratch
+    // 2. Xử lý nút Đúng/Sai Vòng 1
+    // Ẩn hoàn toàn trạng thái Đúng/Sai cho đến khi bấm nút công bố (isR1ResultShown)
+    let sanitizedR1Ctrl = {
+        trueBtnClass: (isR1ResultShown && state.round1CtrlState?.trueBtnClass) ? state.round1CtrlState.trueBtnClass : "ans-btn",
+        falseBtnClass: (isR1ResultShown && state.round1CtrlState?.falseBtnClass) ? state.round1CtrlState.falseBtnClass : "ans-btn"
+    };
+
+    // 3. Xử lý đáp án Vòng 2
     let sanitizedR2Ctrl = {
-        text: (isR2AnsShown || isR2ResultShown) && state.round2CtrlState?.text ? state.round2CtrlState.text : "🐧",
+        text: ((isR2AnsShown || isR2ResultShown) && state.round2CtrlState?.text) ? state.round2CtrlState.text : "🐧",
         backgroundImage: state.round2CtrlState?.backgroundImage || "url('Whitebar2.png')",
         textColor: state.round2CtrlState?.textColor || "#000000"
     };
 
-    // Build round1CtrlState safely from scratch
-    let sanitizedR1Ctrl = {
-        trueBtnClass: state.round1CtrlState?.trueBtnClass || "ans-btn",
-        falseBtnClass: state.round1CtrlState?.falseBtnClass || "ans-btn"
-    };
-
-    // Return sanitized state with NO Excel arrays, NO background topic lists, and NO secret answer booleans
+    // 4. Trả về state an toàn cho Screen client
     return {
         showMHC: !!state.showMHC,
         currentActiveRound: state.currentActiveRound || 1,
@@ -126,7 +133,13 @@ function sanitizeStateForScreen(state) {
         usedChoices: state.usedChoices || { A: false, B: false, C: false },
         currentRoundIndexR1: state.currentRoundIndexR1 || 0,
         currentRoundIndexR2: state.currentRoundIndexR2 || 0,
-        lastAction: state.lastAction || ''
+        lastAction: state.lastAction || '',
+
+        // Mã hóa toàn bộ dữ liệu Excel/Chủ đề thô thành "🐧"
+        excelRawDataV1: "🐧",
+        excelRawDataV2: "🐧",
+        round1TopicsData: "🐧",
+        round2TopicsData: "🐧"
     };
 }
 

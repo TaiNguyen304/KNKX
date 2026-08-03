@@ -65,58 +65,69 @@ let gameState = {
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
-    const sanitized = JSON.parse(JSON.stringify(state));
-
-    // 1. Redact all background datasets and raw Excel imports completely to a single "🐧"
-    sanitized.excelRawDataV1 = "🐧";
-    sanitized.excelRawDataV2 = "🐧";
-    sanitized.round1TopicsData = "🐧";
-    sanitized.round2TopicsData = "🐧";
-
-    const displayClasses = Array.isArray(sanitized.displayClasses) ? sanitized.displayClasses : [];
+    const displayClasses = Array.isArray(state.displayClasses) ? state.displayClasses : [];
     const isTopicShown = displayClasses.includes('show-topic');
     const isQuestionShown = displayClasses.includes('show-question');
     const isR2AnsShown = displayClasses.includes('show-r2-ans');
     const isR2ResultShown = displayClasses.includes('show-r2-result');
-    const activeQ = sanitized.activeQuestion;
+    const activeQ = state.activeQuestion;
 
-    // 2. Sanitize currentRoundData
-    if (sanitized.currentRoundData) {
-        if (!isTopicShown) {
-            sanitized.currentRoundData.topic = "🐧";
-        }
+    // Build currentRoundData safely from scratch for Screen
+    let sanitizedRoundData = {
+        topic: isTopicShown && state.currentRoundData?.topic ? state.currentRoundData.topic : "🐧",
+        A: { text: "🐧" },
+        B: { text: "🐧" },
+        C: { text: "🐧" }
+    };
 
+    if (state.currentRoundData) {
         ['A', 'B', 'C'].forEach((qKey) => {
-            if (sanitized.currentRoundData[qKey]) {
+            if (state.currentRoundData[qKey]) {
                 const isThisActiveQ = (activeQ === qKey) && isQuestionShown;
-
-                // Secret answer boolean & raw excel answer are ALWAYS encrypted to "🐧" for Screen
-                sanitized.currentRoundData[qKey].correct = "🐧";
-                sanitized.currentRoundData[qKey].excelAnsRaw = "🐧";
-
-                // Question text is encrypted to "🐧" unless this specific question is actively opened on screen
-                if (!isThisActiveQ) {
-                    sanitized.currentRoundData[qKey].text = "🐧";
-                }
+                sanitizedRoundData[qKey] = {
+                    text: isThisActiveQ && state.currentRoundData[qKey].text ? state.currentRoundData[qKey].text : "🐧"
+                };
             }
         });
     }
 
-    // 3. Sanitize Round 2 answer state
-    if (sanitized.round2CtrlState) {
-        sanitized.round2CtrlState.isCorrect = "🐧";
+    // Build round2CtrlState safely from scratch
+    let sanitizedR2Ctrl = {
+        text: (isR2AnsShown || isR2ResultShown) && state.round2CtrlState?.text ? state.round2CtrlState.text : "🐧",
+        backgroundImage: state.round2CtrlState?.backgroundImage || "url('Whitebar2.png')",
+        textColor: state.round2CtrlState?.textColor || "#000000"
+    };
 
-        if (!isR2AnsShown && !isR2ResultShown) {
-            sanitized.round2CtrlState.text = "🐧";
-        }
-    }
+    // Build round1CtrlState safely from scratch
+    let sanitizedR1Ctrl = {
+        trueBtnClass: state.round1CtrlState?.trueBtnClass || "ans-btn",
+        falseBtnClass: state.round1CtrlState?.falseBtnClass || "ans-btn"
+    };
 
-    // 4. Sanitize Round 1 controller selection status
-    if (sanitized.round1CtrlState && sanitized.lastAction !== 'revealResult1') {
-        sanitized.round1CtrlState.selectedStatusAdmin = "🐧";
-    }
-
-    return sanitized;
+    // Return sanitized state with NO Excel arrays, NO background topic lists, and NO secret answer booleans
+    return {
+        showMHC: !!state.showMHC,
+        currentActiveRound: state.currentActiveRound || 1,
+        globalTotalPrize: state.globalTotalPrize || 0,
+        currentMoneyLayoutV1: state.currentMoneyLayoutV1 || [],
+        currentMoneyLayoutV2: state.currentMoneyLayoutV2 || [],
+        isSo5Checked: !!state.isSo5Checked,
+        moneyAnimationChecked: !!state.moneyAnimationChecked,
+        moneyGridStateV1: state.moneyGridStateV1 || {},
+        moneyGridStateV2: state.moneyGridStateV2 || {},
+        symbolBoxesStateV1: state.symbolBoxesStateV1 || {},
+        symbolBoxesStateV2: state.symbolBoxesStateV2 || {},
+        currentRoundData: sanitizedRoundData,
+        displayClasses: displayClasses,
+        activeQuestion: state.activeQuestion || null,
+        activeSideSign: state.activeSideSign || null,
+        round1CtrlState: sanitizedR1Ctrl,
+        round2CtrlState: sanitizedR2Ctrl,
+        usedChoices: state.usedChoices || { A: false, B: false, C: false },
+        currentRoundIndexR1: state.currentRoundIndexR1 || 0,
+        currentRoundIndexR2: state.currentRoundIndexR2 || 0,
+        lastAction: state.lastAction || ''
+    };
 }
 
 function broadcastState() {

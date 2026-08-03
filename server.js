@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
+const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
 
 const app = express();
 const server = http.createServer(app);
@@ -72,7 +73,7 @@ function sanitizeStateForScreen(state) {
     sanitized.round1TopicsData = "🐧";
     sanitized.round2TopicsData = "🐧";
 
-    const displayClasses = sanitized.displayClasses || [];
+    const displayClasses = Array.isArray(sanitized.displayClasses) ? sanitized.displayClasses : [];
     const isTopicShown = displayClasses.includes('show-topic');
     const isQuestionShown = displayClasses.includes('show-question');
     const isR2AnsShown = displayClasses.includes('show-r2-ans');
@@ -93,7 +94,7 @@ function sanitizeStateForScreen(state) {
                 sanitized.currentRoundData[qKey].correct = "🐧";
                 sanitized.currentRoundData[qKey].excelAnsRaw = "🐧";
 
-                // Question text is encrypted to "🐧" unless this question is actively opened on screen
+                // Question text is encrypted to "🐧" unless this specific question is actively opened on screen
                 if (!isThisActiveQ) {
                     sanitized.currentRoundData[qKey].text = "🐧";
                 }
@@ -125,8 +126,15 @@ function broadcastState() {
 }
 
 io.on('connection', (socket) => {
-    socket.on('register-role', (role) => {
-        if (role === 'controller') {
+    // Sockets join 'screen' room by default on initial connection
+    socket.join('screen');
+    socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
+
+    socket.on('register-role', (data) => {
+        let role = typeof data === 'object' ? data.role : data;
+        let key = typeof data === 'object' ? data.key : null;
+
+        if (role === 'controller' && key === CONTROLLER_SECRET_KEY) {
             socket.leave('screen');
             socket.join('controller');
             socket.emit('sync-full-state', gameState);
@@ -148,6 +156,11 @@ io.on('connection', (socket) => {
     socket.on('update-game-state', (updatedState) => {
         if (!updatedState) return;
 
+        // Security enforcement: only authorized controller sockets can push game state updates
+        if (!socket.rooms.has('controller')) {
+            return;
+        }
+
         // Prevent controller from accidentally overwriting server datasets with sanitized "🐧" strings
         if (updatedState.round1TopicsData === "🐧") delete updatedState.round1TopicsData;
         if (updatedState.round2TopicsData === "🐧") delete updatedState.round2TopicsData;
@@ -159,6 +172,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('consume-action', () => {
+        if (!socket.rooms.has('controller')) return;
         gameState.lastAction = '';
         broadcastState();
     });

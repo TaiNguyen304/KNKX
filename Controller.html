@@ -700,13 +700,14 @@
     </div>
 
     <script>
+        const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
         const socket = (typeof io !== 'undefined') ? io() : null;
 
         if (socket) {
             socket.on('connect', () => {
-                socket.emit('register-role', 'controller');
+                socket.emit('register-role', { role: 'controller', key: CONTROLLER_SECRET_KEY });
             });
-            socket.emit('register-role', 'controller');
+            socket.emit('register-role', { role: 'controller', key: CONTROLLER_SECRET_KEY });
         }
 
         let DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];

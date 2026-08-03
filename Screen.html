@@ -696,9 +696,9 @@
 
         if (socket) {
             socket.on('connect', () => {
-                socket.emit('register-role', 'screen');
+                socket.emit('register-role', { role: 'screen' });
             });
-            socket.emit('register-role', 'screen');
+            socket.emit('register-role', { role: 'screen' });
         }
 
         let audioUnlocked = false;

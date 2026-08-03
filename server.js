@@ -36,6 +36,7 @@ let gameState = {
     },
     displayClasses: [],
     activeQuestion: null,
+    activeSideSign: null,
     round1CtrlState: {
         selectedStatusAdmin: null,
         trueBtnClass: "ans-btn",
@@ -57,15 +58,15 @@ let gameState = {
 
 /**
  * Encrypts and sanitizes gameState before broadcasting to Screen clients.
- * Any data not strictly visible on screen right now is encrypted to a single "🐧" symbol.
- * Raw excel data, full topic datasets, and hidden answers are ALWAYS replaced with "🐧".
+ * ANY hidden data, raw excel data, full topic datasets, and secret answers
+ * are ALWAYS replaced with a single "🐧" symbol, regardless of content length.
  */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
     const sanitized = JSON.parse(JSON.stringify(state));
 
-    // 1. Redact all background datasets and raw Excel imports completely to "🐧"
+    // 1. Redact all background datasets and raw Excel imports completely to a single "🐧"
     sanitized.excelRawDataV1 = "🐧";
     sanitized.excelRawDataV2 = "🐧";
     sanitized.round1TopicsData = "🐧";
@@ -124,10 +125,6 @@ function broadcastState() {
 }
 
 io.on('connection', (socket) => {
-    // Sockets join 'screen' room by default until registered
-    socket.join('screen');
-    socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
-
     socket.on('register-role', (role) => {
         if (role === 'controller') {
             socket.leave('screen');
@@ -149,6 +146,14 @@ io.on('connection', (socket) => {
     });
     
     socket.on('update-game-state', (updatedState) => {
+        if (!updatedState) return;
+
+        // Prevent controller from accidentally overwriting server datasets with sanitized "🐧" strings
+        if (updatedState.round1TopicsData === "🐧") delete updatedState.round1TopicsData;
+        if (updatedState.round2TopicsData === "🐧") delete updatedState.round2TopicsData;
+        if (updatedState.excelRawDataV1 === "🐧") delete updatedState.excelRawDataV1;
+        if (updatedState.excelRawDataV2 === "🐧") delete updatedState.excelRawDataV2;
+
         gameState = { ...gameState, ...updatedState };
         broadcastState();
     });

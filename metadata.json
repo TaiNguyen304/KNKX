@@ -1,0 +1,6 @@
+{
+  "name": "Khắc Nhập Khắc Xuất",
+  "description": "Game show Controller and Screen system with secure data encryption and role-based state synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

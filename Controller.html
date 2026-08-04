@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Controller</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/jose.browser.js"></script>
     <style>
         * {
             font-weight: bold !important;
@@ -488,10 +489,25 @@
         .popup-actions .btn {
             flex: 1;
         }
+
+        .sec-badge {
+            font-size: 11px;
+            color: #39ff14;
+            background: rgba(0,255,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #39ff14;
+            margin-left: 10px;
+        }
     </style>
 </head>
 
 <body>
+    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+        <h2 style="margin: 0; color: #39ff14;">KHẮC NHẬP KHẮC XUẤT - BẢNG ĐIỀU KHIỂN</h2>
+        <span class="sec-badge">🔒 Bảo Mật Asymmetric JWE Active</span>
+    </div>
+
     <div class="game-board hide-money" id="gameBoard">
         <div class="prize-container" id="prizeContainer">
             <img src="daucong.png" id="leftSignImg" class="sign-img">
@@ -555,8 +571,7 @@
             </div>
 
             <div class="controls-row">
-                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG
-                    1</button>
+                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
                 <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
                 <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
             </div>
@@ -675,7 +690,25 @@
     </div>
 
     <script>
-        const socket = io('https://knkx.onrender.com');
+        const socket = io();
+        let clientKeyPair = null;
+
+        async function initSecurity() {
+            try {
+                clientKeyPair = await jose.generateKeyPair('RSA-OAEP-256');
+                const publicKeyJwk = await jose.exportJWK(clientKeyPair.publicKey);
+                socket.emit('register-client-key', {
+                    clientType: 'controller',
+                    publicKeyJwk: publicKeyJwk
+                });
+            } catch (e) {
+                console.error('Lỗi khởi tạo khoá RSA-JWE Controller:', e);
+            }
+        }
+
+        socket.on('connect', () => {
+            initSecurity();
+        });
 
         let DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
         let DEFAULT_LAYOUT_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
@@ -690,7 +723,7 @@
             moneyGridStateV2: {},
             symbolBoxesStateV1: {},
             symbolBoxesStateV2: {},
-            currentRoundData: { topic: "TỪ CHỦ ĐỀ 1", A: { text: 'Trống', correct: true }, B: { text: 'Trống', correct: true }, C: { text: 'Trống', correct: true } },
+            currentRoundData: { topic: "CHỦ ĐỀ 1.1", A: { text: 'Trống', correct: true }, B: { text: 'Trống', correct: true }, C: { text: 'Trống', correct: true } },
             displayClasses: ['hide-money'],
             activeQuestion: null,
             round1CtrlState: { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" },
@@ -743,7 +776,22 @@
             }
         }
 
-        socket.on('sync-full-state', (serverState) => {
+        socket.on('sync-full-state', async (envelope) => {
+            let serverState = null;
+            if (envelope && envelope.jwe && clientKeyPair) {
+                try {
+                    const { plaintext } = await jose.compactDecrypt(envelope.jwe, clientKeyPair.privateKey);
+                    serverState = JSON.parse(new TextDecoder().decode(plaintext));
+                } catch (e) {
+                    console.error('Lỗi giải mã JWE trên Controller:', e);
+                    return;
+                }
+            } else if (envelope && !envelope.jwe && !envelope.pendingKey) {
+                serverState = envelope;
+            }
+
+            if (!serverState) return;
+
             const isSo5Changed = (state && state.isSo5Checked !== serverState.isSo5Checked);
             state = serverState;
 
@@ -1327,10 +1375,8 @@
         });
 
         function disableDevTools() {
-            // 1. Chặn menu chuột phải (Context Menu)
             document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            // 2. Chặn các phím tắt mở DevTools & View Source
             document.addEventListener('keydown', (e) => {
                 if (
                     e.key === 'F12' ||
@@ -1343,13 +1389,11 @@
                 }
             });
 
-            // 3. Tự động xóa Console & vô hiệu hóa Console Output
             setInterval(() => {
                 console.clear();
             }, 1000);
         }
 
-        // Bật tính năng chống DevTools ngay khi tải xong trang
         window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>

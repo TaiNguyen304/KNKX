@@ -1,14 +1,26 @@
-const express = require('express');
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import * as jose from 'jose';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
     cors: { origin: "*" }
 });
-const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
+
+app.get('/jose.browser.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'jose.browser.js'));
+});
 
 app.get('/controller', (req, res) => {
     res.sendFile(path.join(__dirname, 'Controller.html'));
@@ -19,7 +31,29 @@ app.get('/screen', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('Hệ thống đang chạy! Truy cập /controller hoặc /screen để bắt đầu.');
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <title>Khắc Nhập Khắc Xuất - Hệ Thống Trò Chơi</title>
+            <style>
+                body { font-family: sans-serif; background: #0b0d1b; color: #fff; text-align: center; padding-top: 50px; }
+                h1 { color: #39ff14; }
+                a { color: #00ffff; font-size: 20px; margin: 0 15px; text-decoration: none; border: 1px solid #00ffff; padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 20px; }
+                a:hover { background: #00ffff; color: #000; }
+            </style>
+        </head>
+        <body>
+            <h1>Hệ Thống Khắc Nhập Khắc Xuất Đã Sẵn Sàng</h1>
+            <p>Vui lòng chọn trang điều khiển hoặc màn hình hiển thị sân khấu:</p>
+            <div>
+                <a href="/controller" target="_blank">Trang Điều Khiển (Controller)</a>
+                <a href="/screen" target="_blank">Màn Hình Hướng Sân Khấu (Screen)</a>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 let gameState = {
@@ -30,18 +64,19 @@ let gameState = {
     currentMoneyLayoutV2: ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"],
     isSo5Checked: false,
     moneyAnimationChecked: false,
-    moneyGridStateV1: {}, 
-    moneyGridStateV2: {},   
-    symbolBoxesStateV1: {}, 
-    symbolBoxesStateV2: {}, 
+    moneyGridStateV1: {},
+    moneyGridStateV2: {},
+    symbolBoxesStateV1: {},
+    symbolBoxesStateV2: {},
     currentRoundData: {
-        topic: "TỪ CHỦ ĐỀ 1",
-        A: { text: 'Câu hỏi mẫu A', correct: true, excelAnsRaw: '' },
-        B: { text: 'Câu hỏi mẫu B', correct: false, excelAnsRaw: '' },
-        C: { text: 'Câu hỏi mẫu C', correct: true, excelAnsRaw: '' }
+        topic: "CHỦ ĐỀ 1.1",
+        A: { text: 'Câu hỏi mẫu A', correct: true, excelAnsRaw: 'Đúng' },
+        B: { text: 'Câu hỏi mẫu B', correct: false, excelAnsRaw: 'Sai' },
+        C: { text: 'Câu hỏi mẫu C', correct: true, excelAnsRaw: 'Đúng' }
     },
-    displayClasses: [],
+    displayClasses: ['hide-money'],
     activeQuestion: null,
+    activeSideSign: null,
     round1CtrlState: {
         selectedStatusAdmin: null,
         trueBtnClass: "ans-btn",
@@ -61,8 +96,103 @@ let gameState = {
     lastAction: ''
 };
 
+// Tạo bộ lọc dữ liệu an toàn cho màn hình Screen (bảo mật tuyệt đối thông tin câu hỏi/đáp án)
+function buildScreenPayload(state) {
+    const curQuestion = state.activeQuestion;
+    
+    // Xây dựng object currentRoundData an toàn cho Screen
+    let safeRoundData = null;
+    if (state.currentRoundData) {
+        safeRoundData = {
+            topic: state.currentRoundData.topic || ""
+        };
+
+        ['A', 'B', 'C'].forEach(ch => {
+            const rawChoice = state.currentRoundData[ch];
+            if (rawChoice) {
+                // Chỉ gửi nội dung câu hỏi nếu câu hỏi đó đang được kích hoạt mở
+                const isThisQuestionActive = (curQuestion === ch);
+                safeRoundData[ch] = {
+                    text: isThisQuestionActive ? (rawChoice.text || "") : "",
+                    excelAnsRaw: "" // Luôn ẩn đáp án gốc trên Screen ngoại trừ khi được hiển thị kết quả
+                };
+            }
+        });
+    }
+
+    // Bảo vệ thông tin đáp án vòng 2 trừ khi đã được admin ấn lệnh tiết lộ
+    let safeRound2CtrlState = { ...state.round2CtrlState };
+    if (!state.displayClasses || (!state.displayClasses.includes('show-r2-ans') && !state.displayClasses.includes('show-r2-result'))) {
+        safeRound2CtrlState.text = "";
+    }
+
+    return {
+        showMHC: state.showMHC,
+        currentActiveRound: state.currentActiveRound,
+        globalTotalPrize: state.globalTotalPrize,
+        currentMoneyLayoutV1: state.currentMoneyLayoutV1,
+        currentMoneyLayoutV2: state.currentMoneyLayoutV2,
+        isSo5Checked: state.isSo5Checked,
+        moneyAnimationChecked: state.moneyAnimationChecked,
+        moneyGridStateV1: state.moneyGridStateV1,
+        moneyGridStateV2: state.moneyGridStateV2,
+        symbolBoxesStateV1: state.symbolBoxesStateV1,
+        symbolBoxesStateV2: state.symbolBoxesStateV2,
+        currentRoundData: safeRoundData,
+        displayClasses: state.displayClasses,
+        activeQuestion: state.activeQuestion,
+        activeSideSign: state.activeSideSign,
+        round1CtrlState: state.round1CtrlState,
+        round2CtrlState: safeRound2CtrlState,
+        usedChoices: state.usedChoices,
+        lastAction: state.lastAction
+        // Tuyệt đối KHÔNG bao giờ gửi excelRawDataV1, excelRawDataV2, round1TopicsData, round2TopicsData sang Screen!
+    };
+}
+
+// Gửi payload đã được mã hóa JWE tới socket
+async function emitEncryptedState(socket) {
+    try {
+        const payloadToEncrypt = (socket.clientType === 'screen')
+            ? buildScreenPayload(gameState)
+            : gameState;
+
+        if (socket.publicKey) {
+            const jsonStr = JSON.stringify(payloadToEncrypt);
+            const jwe = await new jose.CompactEncrypt(new TextEncoder().encode(jsonStr))
+                .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
+                .encrypt(socket.publicKey);
+
+            socket.emit('sync-full-state', { jwe });
+        } else {
+            // Trường hợp socket chưa đăng ký khoá công khai
+            socket.emit('sync-full-state', { jwe: null, pendingKey: true });
+        }
+    } catch (err) {
+        console.error('Lỗi khi mã hóa JWE payload:', err);
+    }
+}
+
+// Phát lại trạng thái tới tất cả các kết nối
+async function broadcastState() {
+    const sockets = await io.fetchSockets();
+    for (const socket of sockets) {
+        await emitEncryptedState(socket);
+    }
+}
+
 io.on('connection', (socket) => {
-    socket.emit('sync-full-state', gameState);
+    socket.on('register-client-key', async (data) => {
+        try {
+            if (data && data.publicKeyJwk) {
+                socket.publicKey = await jose.importJWK(data.publicKeyJwk, 'RSA-OAEP-256');
+                socket.clientType = data.clientType || 'unknown';
+            }
+        } catch (err) {
+            console.error('Lỗi đăng ký khóa công khai:', err);
+        }
+        await emitEncryptedState(socket);
+    });
 
     socket.on('trigger-sound', (data) => {
         if (data && data.sound === 'stop_all') {
@@ -71,16 +201,15 @@ io.on('connection', (socket) => {
             io.emit('play-sound-client', data);
         }
     });
-    
-    socket.on('update-game-state', (updatedState) => {
+
+    socket.on('update-game-state', async (updatedState) => {
         gameState = { ...gameState, ...updatedState };
-        io.emit('sync-full-state', gameState);
+        await broadcastState();
     });
 
-    // SỬA TẠI ĐÂY: Xóa action cũ và đồng bộ ngay trạng thái sạch cho tất cả các bên
-    socket.on('consume-action', () => {
+    socket.on('consume-action', async () => {
         gameState.lastAction = '';
-        io.emit('sync-full-state', gameState);
+        await broadcastState();
     });
 
     socket.on('trigger-popup', (msg) => {
@@ -88,6 +217,6 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server đang chạy tại port: ${PORT}`);
+httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server Khắc Nhập Khắc Xuất đang chạy tại port: ${PORT}`);
 });

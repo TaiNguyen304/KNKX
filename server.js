@@ -242,14 +242,16 @@ io.on('connection', (socket) => {
     });
 });
 
-app.get('/controller', (_req, res) => {
+// Chấp nhận tất cả các biến thể đường dẫn có hoặc không có đuôi .html, phân biệt/không phân biệt hoa thường
+app.get(['/controller', '/controller.html', '/Controller.html'], (_req, res) => {
     res.sendFile(path.join(currentDir, 'Controller.html'));
 });
 
-app.get('/screen', (_req, res) => {
+app.get(['/screen', '/screen.html', '/Screen.html'], (_req, res) => {
     res.sendFile(path.join(currentDir, 'Screen.html'));
 });
 
+// Phục vụ tất cả tài nguyên tĩnh ở thư mục gốc (ảnh, nhạc, JS...)
 app.use(express.static(currentDir));
 
 async function startServer() {
@@ -266,8 +268,18 @@ async function startServer() {
     } else {
         const distPath = path.join(currentDir, 'dist');
         app.use(express.static(distPath));
-        app.get('*', (_req, res) => {
-            res.sendFile(path.join(distPath, 'index.html'));
+        
+        // Fallback an toàn: Chỉ trả về index.html nếu file tồn tại
+        app.get('*', (req, res, next) => {
+            const indexPath = path.join(distPath, 'index.html');
+            res.sendFile(indexPath, (err) => {
+                if (err) {
+                    // Nếu không có index.html trong dist, fallback về thư mục gốc
+                    res.sendFile(path.join(currentDir, 'Controller.html'), (e) => {
+                        if (e) next();
+                    });
+                }
+            });
         });
     }
 

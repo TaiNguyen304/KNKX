@@ -1,12 +1,11 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import crypto from 'crypto'; // Module crypto để mã hóa
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
-import { createServer as createViteServer } from 'vite';
 
-// Tự động tương thích cả khi chạy bằng ESM (node direct/tsx) lẫn CJS (esbuild bundle trên Render)
+// Tự động tương thích cả khi chạy ESM lẫn CJS (esbuild bundle)
 const getDirname = () => {
     try {
         if (typeof __dirname !== 'undefined') return __dirname;
@@ -20,19 +19,14 @@ const currentDir = getDirname();
 
 const PORT = process.env.PORT || 3000;
 const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
-
-// KEY BẢO MẬT CHỈ TỒN TẠI TRÊN SERVER (KHÔNG BAO GIỜ GỬI XUỐNG SCREEN)
 const AES_SECRET_KEY = process.env.SCREEN_SECRET_KEY || "KNKX_SERVER_AES_KEY_SECRET_32B!"; 
 
-/**
- * Mã hóa AES-256 bất kỳ giá trị nào thành chuỗi mã hóa không thể đọc bằng F12
- */
 function encryptAES(data) {
     if (data === undefined || data === null) return data;
     try {
         const text = typeof data === 'object' ? JSON.stringify(data) : String(data);
-        const iv = crypto.randomBytes(16); // Tạo Vector khởi tạo ngẫu nhiên
-        const key = Buffer.from(AES_SECRET_KEY.padEnd(32).slice(0, 32)); // Đảm bảo đúng 32 bytes
+        const iv = crypto.randomBytes(16);
+        const key = Buffer.from(AES_SECRET_KEY.padEnd(32).slice(0, 32));
         const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
         
         let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -90,16 +84,11 @@ let gameState = {
     lastAction: ''
 };
 
-/**
- * Mã hóa toàn bộ dữ liệu nhạy cảm trước khi gửi tới Screen.
- * Bất kỳ giá trị nào chưa đến giờ hiển thị hoặc đáp án bí mật đều bị MÃ HÓA AES-256.
- */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
     const displayClasses = Array.isArray(state.displayClasses) ? state.displayClasses : [];
     
-    // Cờ hiển thị từ Controller
     const isTopicShown = displayClasses.includes('show-topic');
     const isQuestionShown = displayClasses.includes('show-question');
     const isR1ResultShown = displayClasses.includes('show-r1-result'); 
@@ -108,7 +97,6 @@ function sanitizeStateForScreen(state) {
     
     const activeQ = state.activeQuestion;
 
-    // 1. Mã hóa câu hỏi, chủ đề và ĐÁP ÁN ĐÚNG
     let sanitizedRoundData = {
         topic: (isTopicShown && state.currentRoundData?.topic) ? state.currentRoundData.topic : encryptAES(state.currentRoundData?.topic || "HIDDEN_TOPIC"),
         A: { text: encryptAES("LOCKED") },
@@ -123,10 +111,7 @@ function sanitizeStateForScreen(state) {
                 const rawObj = state.currentRoundData[qKey];
 
                 sanitizedRoundData[qKey] = {
-                    // Nếu chưa mở câu hỏi => Mã hóa text. Khi mở rồi => Hiện text
                     text: isThisActiveQ && rawObj.text ? rawObj.text : encryptAES(rawObj.text || "LOCKED_TEXT"),
-                    
-                    // LUÔN LUÔN mã hóa AES thuộc tính correct và excelAnsRaw
                     correct: encryptAES(rawObj.correct),
                     excelAnsRaw: encryptAES(rawObj.excelAnsRaw)
                 };
@@ -134,21 +119,18 @@ function sanitizeStateForScreen(state) {
         });
     }
 
-    // 2. Mã hóa trạng thái nút Đúng/Sai Vòng 1
     let sanitizedR1Ctrl = {
         trueBtnClass: isR1ResultShown ? (state.round1CtrlState?.trueBtnClass || "ans-btn") : encryptAES(state.round1CtrlState?.trueBtnClass || "SECRET_STATUS"),
         falseBtnClass: isR1ResultShown ? (state.round1CtrlState?.falseBtnClass || "ans-btn") : encryptAES(state.round1CtrlState?.falseBtnClass || "SECRET_STATUS")
     };
 
-    // 3. Mã hóa đáp án Vòng 2
     let sanitizedR2Ctrl = {
         text: (isR2AnsShown || isR2ResultShown) ? (state.round2CtrlState?.text || "") : encryptAES(state.round2CtrlState?.text || "SECRET_ANSWER"),
         backgroundImage: state.round2CtrlState?.backgroundImage || "url('Whitebar2.png')",
         textColor: state.round2CtrlState?.textColor || "#000000",
-        isCorrect: encryptAES(state.round2CtrlState?.isCorrect) // Mã hóa trạng thái đúng/sai
+        isCorrect: encryptAES(state.round2CtrlState?.isCorrect)
     };
 
-    // 4. Trả về state với toàn bộ dữ liệu thô đã bị mã hóa AES
     return {
         showMHC: !!state.showMHC,
         currentActiveRound: state.currentActiveRound || 1,
@@ -172,7 +154,6 @@ function sanitizeStateForScreen(state) {
         currentRoundIndexR2: state.currentRoundIndexR2 || 0,
         lastAction: state.lastAction || '',
 
-        // Mã hóa 100% kho đề và dữ liệu Excel thô sang dạng AES Ciphertext vô nghĩa
         excelRawDataV1: encryptAES(state.excelRawDataV1 || "RAW_DATA"),
         excelRawDataV2: encryptAES(state.excelRawDataV2 || "RAW_DATA"),
         round1TopicsData: encryptAES(state.round1TopicsData || "TOPICS_DATA"),
@@ -220,7 +201,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Loại bỏ trường hợp Controller vô tình đẩy lại chuỗi đã bị encrypt lên Server
         ['round1TopicsData', 'round2TopicsData', 'excelRawDataV1', 'excelRawDataV2'].forEach(key => {
             if (typeof updatedState[key] === 'string' && updatedState[key].includes(':')) {
                 delete updatedState[key];
@@ -242,50 +222,24 @@ io.on('connection', (socket) => {
     });
 });
 
-// Chấp nhận tất cả các biến thể đường dẫn có hoặc không có đuôi .html, phân biệt/không phân biệt hoa thường
+// Serve static files trực tiếp từ thư mục hiện tại
+app.use(express.static(currentDir));
+
+// Route xử lý Controller
 app.get(['/controller', '/controller.html', '/Controller.html'], (_req, res) => {
     res.sendFile(path.join(currentDir, 'Controller.html'));
 });
 
+// Route xử lý Screen
 app.get(['/screen', '/screen.html', '/Screen.html'], (_req, res) => {
     res.sendFile(path.join(currentDir, 'Screen.html'));
 });
 
-// Phục vụ tất cả tài nguyên tĩnh ở thư mục gốc (ảnh, nhạc, JS...)
-app.use(express.static(currentDir));
+// Route mặc định (Trang chủ)
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(currentDir, 'Controller.html'));
+});
 
-async function startServer() {
-    if (process.env.NODE_ENV !== 'production') {
-        try {
-            const vite = await createViteServer({
-                server: { middlewareMode: true },
-                appType: 'spa',
-            });
-            app.use(vite.middlewares);
-        } catch (e) {
-            // bỏ console.log thừa
-        }
-    } else {
-        const distPath = path.join(currentDir, 'dist');
-        app.use(express.static(distPath));
-        
-        // Fallback an toàn: Chỉ trả về index.html nếu file tồn tại
-        app.get('*', (req, res, next) => {
-            const indexPath = path.join(distPath, 'index.html');
-            res.sendFile(indexPath, (err) => {
-                if (err) {
-                    // Nếu không có index.html trong dist, fallback về thư mục gốc
-                    res.sendFile(path.join(currentDir, 'Controller.html'), (e) => {
-                        if (e) next();
-                    });
-                }
-            });
-        });
-    }
-
-    server.listen(PORT, '0.0.0.0', () => {
-        // Server listening on designated port
-    });
-}
-
-startServer();
+server.listen(PORT, '0.0.0.0', () => {
+    // Server running
+});

@@ -61,43 +61,8 @@ let gameState = {
     lastAction: ''
 };
 
-// HÀM BẢO MẬT: Lọc sạch dữ liệu nhạy cảm trước khi gửi sang Screen
-function sanitizeStateForScreen(state) {
-    const cleanState = JSON.parse(JSON.stringify(state));
-    
-    // Xóa hoàn toàn danh sách ngân hàng đề thi
-    delete cleanState.round1TopicsData;
-    delete cleanState.round2TopicsData;
-    delete cleanState.excelRawDataV1;
-    delete cleanState.excelRawDataV2;
-
-    // Lọc currentRoundData: Chỉ giữ lại Text câu hỏi NẾU đang mở câu hỏi đó (activeQuestion)
-    if (cleanState.currentRoundData) {
-        const activeQ = cleanState.activeQuestion;
-        const roundDataClean = {
-            topic: cleanState.currentRoundData.topic || ''
-        };
-
-        // Chỉ truyền text câu hỏi đang được chọn công khai, giấu sạch các câu còn lại và đáp án (correct/excelAnsRaw)
-        if (activeQ && cleanState.currentRoundData[activeQ]) {
-            roundDataClean[activeQ] = {
-                text: cleanState.currentRoundData[activeQ].text
-            };
-        }
-        cleanState.currentRoundData = roundDataClean;
-    }
-
-    // Ở Vòng 2: Giấu text đáp án của Controller nếu chưa bấm công bố kết quả
-    if (cleanState.round2CtrlState && !cleanState.displayClasses.includes('show-r2-result') && !cleanState.displayClasses.includes('show-r2-ans')) {
-        cleanState.round2CtrlState.text = '';
-    }
-
-    return cleanState;
-}
-
 io.on('connection', (socket) => {
-    // Phân biệt Room hoặc gửi state đã lọc
-    socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
+    socket.emit('sync-full-state', gameState);
 
     socket.on('trigger-sound', (data) => {
         if (data && data.sound === 'stop_all') {
@@ -109,17 +74,13 @@ io.on('connection', (socket) => {
     
     socket.on('update-game-state', (updatedState) => {
         gameState = { ...gameState, ...updatedState };
-        
-        // Controller nhận bản đầy đủ để điều khiển
-        socket.broadcast.emit('sync-full-state-admin', gameState);
-
-        // Screen chỉ nhận bản đã LỌC BẢO MẬT SẠCH CÂU HỎI & ĐÁP ÁN
-        io.emit('sync-full-state', sanitizeStateForScreen(gameState));
+        io.emit('sync-full-state', gameState);
     });
 
+    // SỬA TẠI ĐÂY: Xóa action cũ và đồng bộ ngay trạng thái sạch cho tất cả các bên
     socket.on('consume-action', () => {
         gameState.lastAction = '';
-        io.emit('sync-full-state', sanitizeStateForScreen(gameState));
+        io.emit('sync-full-state', gameState);
     });
 
     socket.on('trigger-popup', (msg) => {

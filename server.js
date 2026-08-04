@@ -1,13 +1,22 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import crypto from 'crypto'; // Thêm module crypto để mã hóa
+import crypto from 'crypto'; // Module crypto để mã hóa
 import { fileURLToPath } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Tự động tương thích cả khi chạy bằng ESM (node direct/tsx) lẫn CJS (esbuild bundle trên Render)
+const getDirname = () => {
+    try {
+        if (typeof __dirname !== 'undefined') return __dirname;
+        return path.dirname(fileURLToPath(import.meta.url));
+    } catch {
+        return process.cwd();
+    }
+};
+
+const currentDir = getDirname();
 
 const PORT = process.env.PORT || 3000;
 const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
@@ -234,14 +243,14 @@ io.on('connection', (socket) => {
 });
 
 app.get('/controller', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'Controller.html'));
+    res.sendFile(path.join(currentDir, 'Controller.html'));
 });
 
 app.get('/screen', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'Screen.html'));
+    res.sendFile(path.join(currentDir, 'Screen.html'));
 });
 
-app.use(express.static(__dirname));
+app.use(express.static(currentDir));
 
 async function startServer() {
     if (process.env.NODE_ENV !== 'production') {
@@ -252,10 +261,10 @@ async function startServer() {
             });
             app.use(vite.middlewares);
         } catch (e) {
-            console.log('Vite middleware notice:', e.message);
+            // bỏ console.log thừa
         }
     } else {
-        const distPath = path.join(__dirname, 'dist');
+        const distPath = path.join(currentDir, 'dist');
         app.use(express.static(distPath));
         app.get('*', (_req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
@@ -263,7 +272,7 @@ async function startServer() {
     }
 
     server.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server đang chạy tại port: ${PORT}`);
+        // Server listening on designated port
     });
 }
 

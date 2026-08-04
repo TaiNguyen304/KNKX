@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Screen</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://knkx.onrender.com/socket.io/socket.io.js"></script>
     <style>
         * {
             font-weight: bold !important;
@@ -18,7 +18,6 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            background-color: #0d1b2a;
             background-image: url('bg1.png');
             background-size: cover;
             background-position: center;
@@ -67,7 +66,6 @@
         .main-prize {
             position: relative;
             z-index: 2;
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 85px;
@@ -79,10 +77,11 @@
             box-sizing: border-box;
             transform-origin: center center !important;
             will-change: transform, width;
-            border-radius: 8px;
+            /* Dùng transition để xử lý mượt mà việc đổi size 460px <-> 660px mà không sinh lỗi giật */
             transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
+        /* Kích hoạt animation thông qua thuộc tính dữ liệu để tránh xung đột class */
         .main-prize[data-anim="active"] {
             animation: moneyCloseOpen 0.6s linear forwards;
         }
@@ -92,6 +91,7 @@
             animation: stretch460 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
+        /* Tách biệt hoàn toàn hiệu ứng thu phóng tiền thành một keyframes tuyến tính */
         @keyframes moneyCloseOpen {
             0% {
                 transform: scaleX(1);
@@ -122,7 +122,6 @@
         }
 
         .symbol-box {
-            background-color: #f0f0f0;
             background-image: url('SymbolStrap.png');
             background-size: 100% 100%;
             flex: 1;
@@ -132,7 +131,6 @@
             align-items: center;
             font-size: 36px;
             color: #000;
-            border-radius: 6px;
         }
 
         .game-board.round-2-mode .symbol-box {
@@ -140,12 +138,10 @@
         }
 
         .symbol-box.selected {
-            background-color: #ff9900;
             background-image: url('SymbolChooseStrap.png') !important;
         }
 
         .symbol-box.closed {
-            background-color: #444;
             background-image: url('SymbolCloseStrap.png') !important;
             color: transparent !important;
         }
@@ -167,7 +163,6 @@
         }
 
         .money-box {
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 60px;
@@ -176,16 +171,13 @@
             align-items: center;
             color: #000;
             font-size: 26px;
-            border-radius: 6px;
         }
 
         .money-box.selected {
-            background-color: #ff9900;
             background-image: url('ChooseStrap.png') !important;
         }
 
         .money-box.closed {
-            background-color: #444;
             background-image: url('CloseStrap.png') !important;
             color: transparent !important;
         }
@@ -196,7 +188,6 @@
 
         .topic-container {
             display: none;
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 660px;
@@ -208,7 +199,6 @@
             left: 0;
             transform: scaleX(0);
             transform-origin: center;
-            border-radius: 6px;
         }
 
         .topic-text {
@@ -228,7 +218,6 @@
         }
 
         .choice-box {
-            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 75px;
@@ -238,11 +227,9 @@
             align-items: center;
             transform: scaleX(0);
             transform-origin: center;
-            border-radius: 6px;
         }
 
         .choice-box.used {
-            background-color: #888;
             background-image: url('bbb.png') !important;
         }
 
@@ -309,7 +296,6 @@
         .question-box {
             width: 100%;
             height: 100%;
-            background-color: #fff;
             background-size: 100% 100%;
             display: flex;
             align-items: center;
@@ -317,7 +303,6 @@
             box-sizing: border-box;
             transform: scaleX(0);
             transform-origin: left center;
-            border-radius: 8px;
         }
 
         .game-board.round-2-mode .question-box {
@@ -347,7 +332,6 @@
         }
 
         .ans-btn {
-            background-color: #ffd700;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 100px;
@@ -357,23 +341,19 @@
             align-items: center;
             color: #000;
             font-size: 24px;
-            border-radius: 6px;
         }
 
         .ans-btn.chosen {
-            background-color: #2196f3;
             background-image: url('true false choose strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.correct-final {
-            background-color: #4caf50;
             background-image: url('truefalseright strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.wrong-final {
-            background-color: #f44336;
             background-image: url('truefalsewrongstrap.png') !important;
             color: #fff !important;
         }
@@ -409,14 +389,12 @@
         .round2-answer-box {
             width: 100%;
             height: 100%;
-            background-color: #fff;
             background-size: 100% 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             transform: scaleX(0);
             transform-origin: center;
-            border-radius: 8px;
         }
 
         .round2-answer-text {
@@ -514,12 +492,14 @@
             animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
+        /* Thẻ con chịu trách nhiệm chạy animation độc lập, không bị đè bởi class cha */
         .money-text-inner {
             display: inline-block;
             transform-origin: center center;
             will-change: transform;
         }
 
+        /* Khi kích hoạt hiệu ứng co giãn */
         .money-text-inner[data-anim="active"] {
             animation: moneyCloseOpenInner 0.6s linear forwards;
         }
@@ -645,6 +625,20 @@
                 transform: scaleX(1);
             }
         }
+
+        @keyframes moneyCloseOpen {
+            0% {
+                transform: scaleX(1);
+            }
+
+            50% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
     </style>
 </head>
 
@@ -652,9 +646,9 @@
     <div id="mhcOverlay" class="mhc-overlay"></div>
     <div class="game-board hide-money" id="gameBoard">
         <div class="prize-container" id="prizeContainer">
-            <img src="daucong.png" id="leftSignImg" class="sign-img" alt="+">
+            <img src="daucong.png" id="leftSignImg" class="sign-img">
             <div class="main-prize" id="totalPrize">0 $A</div>
-            <img src="daucong.png" id="rightSignImg" class="sign-img" alt="+">
+            <img src="daucong.png" id="rightSignImg" class="sign-img">
         </div>
         <div class="symbols-row" id="symbolsRow"></div>
 
@@ -692,14 +686,7 @@
     </div>
 
     <script>
-        const socket = (typeof io !== 'undefined') ? io() : null;
-
-        if (socket) {
-            socket.on('connect', () => {
-                socket.emit('register-role', { role: 'screen' });
-            });
-            socket.emit('register-role', { role: 'screen' });
-        }
+        const socket = io('https://knkx.onrender.com');
 
         let audioUnlocked = false;
         function unlockAudio() {
@@ -725,206 +712,209 @@
             audioCache[soundName] = audio;
         });
 
-        if (socket) {
-            socket.on('play-sound-client', (data) => {
-                if (!data || !data.sound) return;
-                const soundName = data.sound;
-                if (audioCache[soundName]) {
-                    const cloneSound = audioCache[soundName].cloneNode();
-                    cloneSound.volume = 1;
-                    cloneSound.play().catch(err => { });
-                } else {
-                    if (currentBackgroundMusic) currentBackgroundMusic.pause();
-                    currentBackgroundMusic = new Audio(soundName);
-                    currentBackgroundMusic.play().catch(err => { });
-                }
-            });
+        socket.on('play-sound-client', (data) => {
+            if (!data || !data.sound) return;
+            const soundName = data.sound;
+            if (audioCache[soundName]) {
+                const cloneSound = audioCache[soundName].cloneNode();
+                cloneSound.volume = 1;
+                cloneSound.play().catch(err => { });
+            } else {
+                if (currentBackgroundMusic) currentBackgroundMusic.pause();
+                currentBackgroundMusic = new Audio(soundName);
+                currentBackgroundMusic.play().catch(err => { });
+            }
+        });
 
-            socket.on('stop-all-sounds-client', () => {
-                if (currentBackgroundMusic) {
-                    currentBackgroundMusic.pause();
-                    currentBackgroundMusic.currentTime = 0;
+        socket.on('stop-all-sounds-client', () => {
+            if (currentBackgroundMusic) {
+                currentBackgroundMusic.pause();
+                currentBackgroundMusic.currentTime = 0;
+            }
+            SHORT_SOUNDS.forEach(soundName => {
+                if (audioCache[soundName]) {
+                    audioCache[soundName].pause();
+                    audioCache[soundName].currentTime = 0;
                 }
-                SHORT_SOUNDS.forEach(soundName => {
-                    if (audioCache[soundName]) {
-                        audioCache[soundName].pause();
-                        audioCache[soundName].currentTime = 0;
-                    }
-                });
             });
-        }
+        });
 
         let wasHiddenBefore = true;
         let activeDingIndexes = new Set();
         let currentRenderSession = 0;
+
+        // Đảm bảo biến kiểm soát trạng thái chạy animation hoạt động độc lập
         let isAnimatingMoney = false;
 
-        if (socket) {
-            socket.on('sync-full-state', (state) => {
-                if (!state) return;
+        socket.on('sync-full-state', (state) => {
+            // 1. MHC Overlay
+            const mhc = document.getElementById('mhcOverlay');
+            if (mhc) mhc.style.display = (state.showMHC === undefined || state.showMHC === true) ? 'flex' : 'none';
 
-                // 1. MHC Overlay
-                const mhc = document.getElementById('mhcOverlay');
-                if (mhc) mhc.style.display = (state.showMHC === undefined || state.showMHC === true) ? 'flex' : 'none';
+            // 2. Class Board
+            const board = document.getElementById('gameBoard');
+            board.className = "game-board";
+            if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
+            if (state.displayClasses) state.displayClasses.forEach(cls => board.classList.add(cls));
 
-                // 2. Class Board
-                const board = document.getElementById('gameBoard');
-                board.className = "game-board";
-                if (state.currentActiveRound === 2) board.classList.add('round-2-mode');
-                if (state.displayClasses) state.displayClasses.forEach(cls => board.classList.add(cls));
+            // 3. Side signs
+            const container = document.getElementById('prizeContainer');
+            const leftImg = document.getElementById('leftSignImg');
+            const rightImg = document.getElementById('rightSignImg');
 
-                // 3. Side signs
-                const container = document.getElementById('prizeContainer');
-                const leftImg = document.getElementById('leftSignImg');
-                const rightImg = document.getElementById('rightSignImg');
+            if (state.activeSideSign) {
+                leftImg.src = state.activeSideSign;
+                rightImg.src = state.activeSideSign;
+                container.classList.add('has-signs');
+            } else {
+                container.classList.remove('has-signs');
+            }
 
-                if (state.activeSideSign) {
-                    leftImg.src = state.activeSideSign;
-                    rightImg.src = state.activeSideSign;
-                    container.classList.add('has-signs');
-                } else {
-                    container.classList.remove('has-signs');
+            // 4. Kiểm soát tuyệt đối logic Animation Tiền trên Shape
+            let mainPrizeBox = document.querySelector('.main-prize');
+            let totalPrizeEl = document.getElementById('totalPrize');
+            const hasAnimationTrigger = (state.lastAction === 'moneyAnim_increase' || state.lastAction === 'moneyAnim_decrease');
+
+            if (hasAnimationTrigger && !isAnimatingMoney) {
+                isAnimatingMoney = true;
+                const currentAnimType = state.lastAction;
+
+                // Tiêu thụ hành động ngay lập tức để chặn xung đột gói tin
+                socket.emit('consume-action');
+
+                // Phát âm thanh
+                const soundName = currentAnimType === 'moneyAnim_increase' ? 'value_increase.mp3' : 'value_decrease.mp3';
+                if (audioCache[soundName]) {
+                    const cloneSound = audioCache[soundName].cloneNode();
+                    cloneSound.volume = 1;
+                    cloneSound.play().catch(e => { });
                 }
 
-                // 4. Money Animation on Shape
-                let mainPrizeBox = document.querySelector('.main-prize');
-                let totalPrizeEl = document.getElementById('totalPrize');
-                const hasAnimationTrigger = (state.lastAction === 'moneyAnim_increase' || state.lastAction === 'moneyAnim_decrease');
+                // Xóa animation cũ trước khi gán lại để đảm bảo animation luôn chạy lại từ đầu
+                mainPrizeBox.style.animation = 'none';
+                mainPrizeBox.offsetHeight; // Trigger reflow
+                mainPrizeBox.style.animation = 'moneyCloseOpen 0.6s linear forwards';
 
-                if (hasAnimationTrigger && !isAnimatingMoney) {
-                    isAnimatingMoney = true;
-                    const currentAnimType = state.lastAction;
-
-                    socket.emit('consume-action');
-
-                    const soundName = currentAnimType === 'moneyAnim_increase' ? 'value_increase.mp3' : 'value_decrease.mp3';
-                    if (audioCache[soundName]) {
-                        const cloneSound = audioCache[soundName].cloneNode();
-                        cloneSound.volume = 1;
-                        cloneSound.play().catch(e => { });
+                // Đúng giây thứ 0.3 (khi shape co hẳn về 0), đổi text số tiền
+                setTimeout(() => {
+                    if (totalPrizeEl) {
+                        totalPrizeEl.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
                     }
+                }, 300);
 
-                    mainPrizeBox.style.animation = 'none';
-                    mainPrizeBox.offsetHeight;
-                    mainPrizeBox.style.animation = 'moneyCloseOpen 0.6s linear forwards';
+                // Sau khi kết thúc trọn vẹn 0.6s hiệu ứng, dọn dẹp thuộc tính sạch sẽ
+                setTimeout(() => {
+                    mainPrizeBox.style.animation = '';
+                    isAnimatingMoney = false;
+                }, 600);
 
-                    setTimeout(() => {
-                        if (totalPrizeEl && typeof state.globalTotalPrize === 'number') {
-                            totalPrizeEl.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
-                        }
-                    }, 300);
-
-                    setTimeout(() => {
-                        mainPrizeBox.style.animation = '';
-                        isAnimatingMoney = false;
-                    }, 600);
-
-                } else {
-                    if (!isAnimatingMoney && totalPrizeEl && typeof state.globalTotalPrize === 'number') {
+            } else {
+                // Nếu không trong tiến trình chạy hiệu ứng, cập nhật số tiền tĩnh bình thường
+                if (!isAnimatingMoney) {
+                    if (totalPrizeEl) {
                         totalPrizeEl.innerText = state.globalTotalPrize.toLocaleString('vi-VN') + " $A";
                     }
                 }
+            }
 
-                // 5. Grid logic animation
-                const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
-                let shouldAnimateGrid = false;
+            // 5. Grid logic animation
+            const isCurrentlyHidden = state.displayClasses && state.displayClasses.includes('hide-money');
+            let shouldAnimateGrid = false;
 
-                if (wasHiddenBefore && !isCurrentlyHidden) {
-                    shouldAnimateGrid = true;
-                    activeDingIndexes.clear();
-                    currentRenderSession++;
-                }
-                wasHiddenBefore = isCurrentlyHidden;
+            if (wasHiddenBefore && !isCurrentlyHidden) {
+                shouldAnimateGrid = true;
+                activeDingIndexes.clear();
+                currentRenderSession++;
+            }
+            wasHiddenBefore = isCurrentlyHidden;
 
-                // 6. Draw Grid
-                const grid = document.getElementById('moneyGrid');
-                grid.innerHTML = '';
-                const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
-                const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
-                const thisSession = currentRenderSession;
+            // 6. Draw Grid
+            const grid = document.getElementById('moneyGrid');
+            grid.innerHTML = '';
+            const layout = state.currentActiveRound === 1 ? state.currentMoneyLayoutV1 : state.currentMoneyLayoutV2;
+            const currentGridState = state.currentActiveRound === 1 ? state.moneyGridStateV1 : state.moneyGridStateV2;
+            const thisSession = currentRenderSession;
 
-                if (Array.isArray(layout)) {
-                    layout.forEach((val, idx) => {
-                        const box = document.createElement('div');
-                        box.className = 'money-box';
-                        box.innerText = val;
-                        if (currentGridState && currentGridState[idx] === 'selected') box.classList.add('selected');
-                        if (currentGridState && currentGridState[idx] === 'closed') box.classList.add('closed');
+            layout.forEach((val, idx) => {
+                const box = document.createElement('div');
+                box.className = 'money-box';
+                box.innerText = val;
+                if (currentGridState[idx] === 'selected') box.classList.add('selected');
+                if (currentGridState[idx] === 'closed') box.classList.add('closed');
 
-                        if (shouldAnimateGrid) {
-                            box.classList.add('money-box-animate');
-                            box.style.animationDelay = `${idx * 0.12}s`;
+                if (shouldAnimateGrid) {
+                    box.classList.add('money-box-animate');
+                    box.style.animationDelay = `${idx * 0.12}s`;
 
-                            box.addEventListener('animationstart', () => {
-                                if (thisSession === currentRenderSession && !activeDingIndexes.has(idx)) {
-                                    activeDingIndexes.add(idx);
-                                    if (audioCache['ding.mp3']) {
-                                        const cloneDing = audioCache['ding.mp3'].cloneNode();
-                                        cloneDing.volume = 1;
-                                        cloneDing.play().catch(e => { });
-                                    }
-                                }
-                            });
+                    box.addEventListener('animationstart', () => {
+                        if (thisSession === currentRenderSession && !activeDingIndexes.has(idx)) {
+                            activeDingIndexes.add(idx);
+                            if (audioCache['ding.mp3']) {
+                                const cloneDing = audioCache['ding.mp3'].cloneNode();
+                                cloneDing.volume = 1;
+                                cloneDing.play().catch(e => { });
+                            }
                         }
-                        grid.appendChild(box);
                     });
                 }
+                grid.appendChild(box);
+            });
 
-                // 7. Symbols Row
-                const sRow = document.getElementById('symbolsRow');
-                sRow.innerHTML = '';
-                const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
-                const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
+            // 7. Symbols Row
+            const sRow = document.getElementById('symbolsRow');
+            sRow.innerHTML = '';
+            const displaySigns = state.currentActiveRound === 1 ? ['+', '+', '+', '+', '-', '-', '-', '-'] : ['×', '×', '×', '×', '÷', '÷', '÷', '÷'];
+            const currentSymbolState = state.currentActiveRound === 1 ? state.symbolBoxesStateV1 : state.symbolBoxesStateV2;
 
-                displaySigns.forEach((sign, idx) => {
-                    const box = document.createElement('div');
-                    box.className = 'symbol-box';
-                    box.innerHTML = `<span>${sign}</span>`;
-                    if (currentSymbolState && currentSymbolState[idx] === 'selected') box.classList.add('selected');
-                    if (currentSymbolState && currentSymbolState[idx] === 'closed') box.classList.add('closed');
-                    sRow.appendChild(box);
-                });
+            displaySigns.forEach((sign, idx) => {
+                const box = document.createElement('div');
+                box.className = 'symbol-box';
+                box.innerHTML = `<span>${sign}</span>`;
+                if (currentSymbolState[idx] === 'selected') box.classList.add('selected');
+                if (currentSymbolState[idx] === 'closed') box.classList.add('closed');
+                sRow.appendChild(box);
+            });
 
-                // 8. Texts & Topics
-                if (state.currentRoundData && state.currentRoundData.topic) {
-                    document.getElementById('topicText').innerText = state.currentRoundData.topic;
-                } else {
-                    document.getElementById('topicText').innerText = '';
-                }
+            // 8. Texts & Topics
+            if (state.currentRoundData && state.currentRoundData.topic) {
+                document.getElementById('topicText').innerText = state.currentRoundData.topic;
+            } else {
+                document.getElementById('topicText').innerText = '';
+            }
 
-                ['A', 'B', 'C'].forEach(ch => {
-                    const cBox = document.getElementById(`choice${ch}`);
-                    if (cBox) {
-                        if (state.usedChoices && state.usedChoices[ch]) cBox.classList.add('used');
-                        else cBox.classList.remove('used');
-                    }
-                });
-
-                if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
-                    const qData = state.currentRoundData[state.activeQuestion];
-                    document.getElementById('questionContent').innerText = qData.text || '';
-                    document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
-                    if (state.round1CtrlState) {
-                        document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
-                        document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'ans-btn';
-                    }
-                } else {
-                    document.getElementById('questionContent').innerText = '';
-                }
-
-                const r2Box = document.getElementById('round2AnswerBox');
-                const r2Txt = document.getElementById('round2AnswerText');
-                if (r2Box && r2Txt && state.round2CtrlState) {
-                    r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
-                    r2Txt.innerText = state.round2CtrlState.text || '';
-                    r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+            ['A', 'B', 'C'].forEach(ch => {
+                const cBox = document.getElementById(`choice${ch}`);
+                if (cBox) {
+                    if (state.usedChoices && state.usedChoices[ch]) cBox.classList.add('used');
+                    else cBox.classList.remove('used');
                 }
             });
-        }
+
+            if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
+                document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
+                document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
+                if (state.round1CtrlState) {
+                    document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
+                    document.getElementById('falseBtn').className = state.round1CtrlState.falseBtnClass || 'ans-btn';
+                }
+            } else {
+                document.getElementById('questionContent').innerText = '';
+            }
+
+            const r2Box = document.getElementById('round2AnswerBox');
+            const r2Txt = document.getElementById('round2AnswerText');
+            if (r2Box && r2Txt && state.round2CtrlState) {
+                r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
+                r2Txt.innerText = state.round2CtrlState.text || '';
+                r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+            }
+        });
 
         function disableDevTools() {
+            // 1. Chặn menu chuột phải (Context Menu)
             document.addEventListener('contextmenu', (e) => e.preventDefault());
 
+            // 2. Chặn các phím tắt mở DevTools & View Source
             document.addEventListener('keydown', (e) => {
                 if (
                     e.key === 'F12' ||
@@ -937,11 +927,13 @@
                 }
             });
 
+            // 3. Tự động xóa Console & vô hiệu hóa Console Output
             setInterval(() => {
                 console.clear();
             }, 1000);
         }
 
+        // Bật tính năng chống DevTools ngay khi tải xong trang
         window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>

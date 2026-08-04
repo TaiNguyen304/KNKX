@@ -58,84 +58,48 @@ let gameState = {
 };
 
 /**
- * Encrypts and sanitizes gameState before broadcasting to Screen clients.
- * ANY hidden data, raw excel data, full topic datasets, secret answers, and unannounced 
- * result statuses are ALWAYS replaced with a single "🐧" symbol or default safe values.
+ * Biến đổi và mã hóa TẤT CẢ các trường thông tin thành "🐧" trước khi gửi cho Screen clients.
+ * Tuyệt đối không để lộ bất kỳ thông tin thực nào phía Screen.
  */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
-    const displayClasses = Array.isArray(state.displayClasses) ? state.displayClasses : [];
-    
-    // Cờ hiển thị từ Controller
-    const isTopicShown = displayClasses.includes('show-topic');
-    const isQuestionShown = displayClasses.includes('show-question');
-    const isR1ResultShown = displayClasses.includes('show-r1-result'); // Cờ hiển thị kết quả Vòng 1
-    const isR2AnsShown = displayClasses.includes('show-r2-ans');       // Cờ hiển thị đáp án Vòng 2
-    const isR2ResultShown = displayClasses.includes('show-r2-result'); // Cờ hiển thị kết quả Vòng 2
-    
-    const activeQ = state.activeQuestion;
-
-    // 1. Xử lý câu hỏi và chủ đề
-    let sanitizedRoundData = {
-        topic: isTopicShown && state.currentRoundData?.topic ? state.currentRoundData.topic : "🐧",
-        A: { text: "🐧" },
-        B: { text: "🐧" },
-        C: { text: "🐧" }
-    };
-
-    if (state.currentRoundData) {
-        ['A', 'B', 'C'].forEach((qKey) => {
-            if (state.currentRoundData[qKey]) {
-                const isThisActiveQ = (activeQ === qKey) && isQuestionShown;
-                sanitizedRoundData[qKey] = {
-                    // Chỉ gửi text câu hỏi khi đang active và bấm show-question
-                    text: isThisActiveQ && state.currentRoundData[qKey].text ? state.currentRoundData[qKey].text : "🐧"
-                    // KHÔNG BAO GIỜ bao gồm 'correct' hay 'excelAnsRaw'
-                };
-            }
-        });
-    }
-
-    // 2. Xử lý nút Đúng/Sai Vòng 1
-    // Ẩn hoàn toàn trạng thái Đúng/Sai cho đến khi bấm nút công bố (isR1ResultShown)
-    let sanitizedR1Ctrl = {
-        trueBtnClass: (isR1ResultShown && state.round1CtrlState?.trueBtnClass) ? state.round1CtrlState.trueBtnClass : "ans-btn",
-        falseBtnClass: (isR1ResultShown && state.round1CtrlState?.falseBtnClass) ? state.round1CtrlState.falseBtnClass : "ans-btn"
-    };
-
-    // 3. Xử lý đáp án Vòng 2
-    let sanitizedR2Ctrl = {
-        text: ((isR2AnsShown || isR2ResultShown) && state.round2CtrlState?.text) ? state.round2CtrlState.text : "🐧",
-        backgroundImage: state.round2CtrlState?.backgroundImage || "url('Whitebar2.png')",
-        textColor: state.round2CtrlState?.textColor || "#000000"
-    };
-
-    // 4. Trả về state an toàn cho Screen client
     return {
-        showMHC: !!state.showMHC,
-        currentActiveRound: state.currentActiveRound || 1,
-        globalTotalPrize: state.globalTotalPrize || 0,
-        currentMoneyLayoutV1: state.currentMoneyLayoutV1 || [],
-        currentMoneyLayoutV2: state.currentMoneyLayoutV2 || [],
-        isSo5Checked: !!state.isSo5Checked,
-        moneyAnimationChecked: !!state.moneyAnimationChecked,
-        moneyGridStateV1: state.moneyGridStateV1 || {},
-        moneyGridStateV2: state.moneyGridStateV2 || {},
-        symbolBoxesStateV1: state.symbolBoxesStateV1 || {},
-        symbolBoxesStateV2: state.symbolBoxesStateV2 || {},
-        currentRoundData: sanitizedRoundData,
-        displayClasses: displayClasses,
-        activeQuestion: state.activeQuestion || null,
-        activeSideSign: state.activeSideSign || null,
-        round1CtrlState: sanitizedR1Ctrl,
-        round2CtrlState: sanitizedR2Ctrl,
-        usedChoices: state.usedChoices || { A: false, B: false, C: false },
-        currentRoundIndexR1: state.currentRoundIndexR1 || 0,
-        currentRoundIndexR2: state.currentRoundIndexR2 || 0,
-        lastAction: state.lastAction || '',
-
-        // Mã hóa toàn bộ dữ liệu Excel/Chủ đề thô thành "🐧"
+        showMHC: "🐧",
+        currentActiveRound: "🐧",
+        globalTotalPrize: "🐧",
+        currentMoneyLayoutV1: ["🐧"],
+        currentMoneyLayoutV2: ["🐧"],
+        isSo5Checked: "🐧",
+        moneyAnimationChecked: "🐧",
+        moneyGridStateV1: "🐧",
+        moneyGridStateV2: "🐧",
+        symbolBoxesStateV1: "🐧",
+        symbolBoxesStateV2: "🐧",
+        currentRoundData: {
+            topic: "🐧",
+            A: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" },
+            B: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" },
+            C: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" }
+        },
+        displayClasses: ["🐧"],
+        activeQuestion: "🐧",
+        activeSideSign: "🐧",
+        round1CtrlState: {
+            selectedStatusAdmin: "🐧",
+            trueBtnClass: "🐧",
+            falseBtnClass: "🐧"
+        },
+        round2CtrlState: {
+            text: "🐧",
+            isCorrect: "🐧",
+            backgroundImage: "🐧",
+            textColor: "🐧"
+        },
+        usedChoices: { A: "🐧", B: "🐧", C: "🐧" },
+        currentRoundIndexR1: "🐧",
+        currentRoundIndexR2: "🐧",
+        lastAction: "🐧",
         excelRawDataV1: "🐧",
         excelRawDataV2: "🐧",
         round1TopicsData: "🐧",
@@ -144,27 +108,29 @@ function sanitizeStateForScreen(state) {
 }
 
 function broadcastState() {
-    io.to('controller').emit('sync-full-state', gameState);
+    // Controller nhận bản dữ liệu đầy đủ gốc
+    io.to('Controller').emit('sync-full-state', gameState);
+    // Screen chỉ nhận bản mã hóa 100% 🐧
     const screenState = sanitizeStateForScreen(gameState);
-    io.to('screen').emit('sync-full-state', screenState);
+    io.to('Screen').emit('sync-full-state', screenState);
 }
 
 io.on('connection', (socket) => {
-    // Sockets join 'screen' room by default on initial connection
-    socket.join('screen');
+    // Mặc định kết nối ban đầu vào room 'Screen'
+    socket.join('Screen');
     socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
 
     socket.on('register-role', (data) => {
         let role = typeof data === 'object' ? data.role : data;
         let key = typeof data === 'object' ? data.key : null;
 
-        if (role === 'controller' && key === CONTROLLER_SECRET_KEY) {
-            socket.leave('screen');
-            socket.join('controller');
+        if (role === 'Controller' && key === CONTROLLER_SECRET_KEY) {
+            socket.leave('Screen');
+            socket.join('Controller');
             socket.emit('sync-full-state', gameState);
         } else {
-            socket.leave('controller');
-            socket.join('screen');
+            socket.leave('Controller');
+            socket.join('Screen');
             socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
         }
     });
@@ -180,12 +146,12 @@ io.on('connection', (socket) => {
     socket.on('update-game-state', (updatedState) => {
         if (!updatedState) return;
 
-        // Security enforcement: only authorized controller sockets can push game state updates
-        if (!socket.rooms.has('controller')) {
+        // Chỉ cho phép kết nối thuộc room Controller gửi yêu cầu cập nhật state
+        if (!socket.rooms.has('Controller')) {
             return;
         }
 
-        // Prevent controller from accidentally overwriting server datasets with sanitized "🐧" strings
+        // Bỏ qua nếu dữ liệu cập nhật vô tình dính chuỗi mã hóa "🐧"
         if (updatedState.round1TopicsData === "🐧") delete updatedState.round1TopicsData;
         if (updatedState.round2TopicsData === "🐧") delete updatedState.round2TopicsData;
         if (updatedState.excelRawDataV1 === "🐧") delete updatedState.excelRawDataV1;
@@ -196,7 +162,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('consume-action', () => {
-        if (!socket.rooms.has('controller')) return;
+        if (!socket.rooms.has('Controller')) return;
         gameState.lastAction = '';
         broadcastState();
     });
@@ -206,11 +172,11 @@ io.on('connection', (socket) => {
     });
 });
 
-app.get('/controller', (_req, res) => {
+app.get('/Controller', (_req, res) => {
     res.sendFile(path.join(__dirname, 'Controller.html'));
 });
 
-app.get('/screen', (_req, res) => {
+app.get('/Screen', (_req, res) => {
     res.sendFile(path.join(__dirname, 'Screen.html'));
 });
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import crypto from 'crypto'; // Thêm module crypto để mã hóa
 import { fileURLToPath } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
@@ -10,6 +11,29 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
 const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
+
+// KEY BẢO MẬT CHỈ TỒN TẠI TRÊN SERVER (KHÔNG BAO GIỜ GỬI XUỐNG SCREEN)
+const AES_SECRET_KEY = process.env.SCREEN_SECRET_KEY || "KNKX_SERVER_AES_KEY_SECRET_32B!"; 
+
+/**
+ * Mã hóa AES-256 bất kỳ giá trị nào thành chuỗi mã hóa không thể đọc bằng F12
+ */
+function encryptAES(data) {
+    if (data === undefined || data === null) return data;
+    try {
+        const text = typeof data === 'object' ? JSON.stringify(data) : String(data);
+        const iv = crypto.randomBytes(16); // Tạo Vector khởi tạo ngẫu nhiên
+        const key = Buffer.from(AES_SECRET_KEY.padEnd(32).slice(0, 32)); // Đảm bảo đúng 32 bytes
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        
+        let encrypted = cipher.update(text, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        
+        return iv.toString('hex') + ':' + encrypted;
+    } catch (err) {
+        return "ENC_ERROR";
+    }
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -58,79 +82,116 @@ let gameState = {
 };
 
 /**
- * Biến đổi và mã hóa TẤT CẢ các trường thông tin thành "🐧" trước khi gửi cho Screen clients.
- * Tuyệt đối không để lộ bất kỳ thông tin thực nào phía Screen.
+ * Mã hóa toàn bộ dữ liệu nhạy cảm trước khi gửi tới Screen.
+ * Bất kỳ giá trị nào chưa đến giờ hiển thị hoặc đáp án bí mật đều bị MÃ HÓA AES-256.
  */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
+    const displayClasses = Array.isArray(state.displayClasses) ? state.displayClasses : [];
+    
+    // Cờ hiển thị từ Controller
+    const isTopicShown = displayClasses.includes('show-topic');
+    const isQuestionShown = displayClasses.includes('show-question');
+    const isR1ResultShown = displayClasses.includes('show-r1-result'); 
+    const isR2AnsShown = displayClasses.includes('show-r2-ans');       
+    const isR2ResultShown = displayClasses.includes('show-r2-result'); 
+    
+    const activeQ = state.activeQuestion;
+
+    // 1. Mã hóa câu hỏi, chủ đề và ĐÁP ÁN ĐÚNG
+    let sanitizedRoundData = {
+        topic: (isTopicShown && state.currentRoundData?.topic) ? state.currentRoundData.topic : encryptAES(state.currentRoundData?.topic || "HIDDEN_TOPIC"),
+        A: { text: encryptAES("LOCKED") },
+        B: { text: encryptAES("LOCKED") },
+        C: { text: encryptAES("LOCKED") }
+    };
+
+    if (state.currentRoundData) {
+        ['A', 'B', 'C'].forEach((qKey) => {
+            if (state.currentRoundData[qKey]) {
+                const isThisActiveQ = (activeQ === qKey) && isQuestionShown;
+                const rawObj = state.currentRoundData[qKey];
+
+                sanitizedRoundData[qKey] = {
+                    // Nếu chưa mở câu hỏi => Mã hóa text. Khi mở rồi => Hiện text
+                    text: isThisActiveQ && rawObj.text ? rawObj.text : encryptAES(rawObj.text || "LOCKED_TEXT"),
+                    
+                    // LUÔN LUÔN mã hóa AES thuộc tính correct và excelAnsRaw
+                    correct: encryptAES(rawObj.correct),
+                    excelAnsRaw: encryptAES(rawObj.excelAnsRaw)
+                };
+            }
+        });
+    }
+
+    // 2. Mã hóa trạng thái nút Đúng/Sai Vòng 1
+    let sanitizedR1Ctrl = {
+        trueBtnClass: isR1ResultShown ? (state.round1CtrlState?.trueBtnClass || "ans-btn") : encryptAES(state.round1CtrlState?.trueBtnClass || "SECRET_STATUS"),
+        falseBtnClass: isR1ResultShown ? (state.round1CtrlState?.falseBtnClass || "ans-btn") : encryptAES(state.round1CtrlState?.falseBtnClass || "SECRET_STATUS")
+    };
+
+    // 3. Mã hóa đáp án Vòng 2
+    let sanitizedR2Ctrl = {
+        text: (isR2AnsShown || isR2ResultShown) ? (state.round2CtrlState?.text || "") : encryptAES(state.round2CtrlState?.text || "SECRET_ANSWER"),
+        backgroundImage: state.round2CtrlState?.backgroundImage || "url('Whitebar2.png')",
+        textColor: state.round2CtrlState?.textColor || "#000000",
+        isCorrect: encryptAES(state.round2CtrlState?.isCorrect) // Mã hóa trạng thái đúng/sai
+    };
+
+    // 4. Trả về state với toàn bộ dữ liệu thô đã bị mã hóa AES
     return {
-        showMHC: "🐧",
-        currentActiveRound: "🐧",
-        globalTotalPrize: "🐧",
-        currentMoneyLayoutV1: ["🐧"],
-        currentMoneyLayoutV2: ["🐧"],
-        isSo5Checked: "🐧",
-        moneyAnimationChecked: "🐧",
-        moneyGridStateV1: "🐧",
-        moneyGridStateV2: "🐧",
-        symbolBoxesStateV1: "🐧",
-        symbolBoxesStateV2: "🐧",
-        currentRoundData: {
-            topic: "🐧",
-            A: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" },
-            B: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" },
-            C: { text: "🐧", correct: "🐧", excelAnsRaw: "🐧" }
-        },
-        displayClasses: ["🐧"],
-        activeQuestion: "🐧",
-        activeSideSign: "🐧",
-        round1CtrlState: {
-            selectedStatusAdmin: "🐧",
-            trueBtnClass: "🐧",
-            falseBtnClass: "🐧"
-        },
-        round2CtrlState: {
-            text: "🐧",
-            isCorrect: "🐧",
-            backgroundImage: "🐧",
-            textColor: "🐧"
-        },
-        usedChoices: { A: "🐧", B: "🐧", C: "🐧" },
-        currentRoundIndexR1: "🐧",
-        currentRoundIndexR2: "🐧",
-        lastAction: "🐧",
-        excelRawDataV1: "🐧",
-        excelRawDataV2: "🐧",
-        round1TopicsData: "🐧",
-        round2TopicsData: "🐧"
+        showMHC: !!state.showMHC,
+        currentActiveRound: state.currentActiveRound || 1,
+        globalTotalPrize: state.globalTotalPrize || 0,
+        currentMoneyLayoutV1: state.currentMoneyLayoutV1 || [],
+        currentMoneyLayoutV2: state.currentMoneyLayoutV2 || [],
+        isSo5Checked: !!state.isSo5Checked,
+        moneyAnimationChecked: !!state.moneyAnimationChecked,
+        moneyGridStateV1: state.moneyGridStateV1 || {},
+        moneyGridStateV2: state.moneyGridStateV2 || {},
+        symbolBoxesStateV1: state.symbolBoxesStateV1 || {},
+        symbolBoxesStateV2: state.symbolBoxesStateV2 || {},
+        currentRoundData: sanitizedRoundData,
+        displayClasses: displayClasses,
+        activeQuestion: state.activeQuestion || null,
+        activeSideSign: state.activeSideSign || null,
+        round1CtrlState: sanitizedR1Ctrl,
+        round2CtrlState: sanitizedR2Ctrl,
+        usedChoices: state.usedChoices || { A: false, B: false, C: false },
+        currentRoundIndexR1: state.currentRoundIndexR1 || 0,
+        currentRoundIndexR2: state.currentRoundIndexR2 || 0,
+        lastAction: state.lastAction || '',
+
+        // Mã hóa 100% kho đề và dữ liệu Excel thô sang dạng AES Ciphertext vô nghĩa
+        excelRawDataV1: encryptAES(state.excelRawDataV1 || "RAW_DATA"),
+        excelRawDataV2: encryptAES(state.excelRawDataV2 || "RAW_DATA"),
+        round1TopicsData: encryptAES(state.round1TopicsData || "TOPICS_DATA"),
+        round2TopicsData: encryptAES(state.round2TopicsData || "TOPICS_DATA")
     };
 }
 
 function broadcastState() {
-    // Controller nhận bản dữ liệu đầy đủ gốc
-    io.to('Controller').emit('sync-full-state', gameState);
-    // Screen chỉ nhận bản mã hóa 100% 🐧
+    io.to('controller').emit('sync-full-state', gameState);
     const screenState = sanitizeStateForScreen(gameState);
-    io.to('Screen').emit('sync-full-state', screenState);
+    io.to('screen').emit('sync-full-state', screenState);
 }
 
 io.on('connection', (socket) => {
-    // Mặc định kết nối ban đầu vào room 'Screen'
-    socket.join('Screen');
+    socket.join('screen');
     socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
 
     socket.on('register-role', (data) => {
         let role = typeof data === 'object' ? data.role : data;
         let key = typeof data === 'object' ? data.key : null;
 
-        if (role === 'Controller' && key === CONTROLLER_SECRET_KEY) {
-            socket.leave('Screen');
-            socket.join('Controller');
+        if (role === 'controller' && key === CONTROLLER_SECRET_KEY) {
+            socket.leave('screen');
+            socket.join('controller');
             socket.emit('sync-full-state', gameState);
         } else {
-            socket.leave('Controller');
-            socket.join('Screen');
+            socket.leave('controller');
+            socket.join('screen');
             socket.emit('sync-full-state', sanitizeStateForScreen(gameState));
         }
     });
@@ -146,23 +207,23 @@ io.on('connection', (socket) => {
     socket.on('update-game-state', (updatedState) => {
         if (!updatedState) return;
 
-        // Chỉ cho phép kết nối thuộc room Controller gửi yêu cầu cập nhật state
-        if (!socket.rooms.has('Controller')) {
+        if (!socket.rooms.has('controller')) {
             return;
         }
 
-        // Bỏ qua nếu dữ liệu cập nhật vô tình dính chuỗi mã hóa "🐧"
-        if (updatedState.round1TopicsData === "🐧") delete updatedState.round1TopicsData;
-        if (updatedState.round2TopicsData === "🐧") delete updatedState.round2TopicsData;
-        if (updatedState.excelRawDataV1 === "🐧") delete updatedState.excelRawDataV1;
-        if (updatedState.excelRawDataV2 === "🐧") delete updatedState.excelRawDataV2;
+        // Loại bỏ trường hợp Controller vô tình đẩy lại chuỗi đã bị encrypt lên Server
+        ['round1TopicsData', 'round2TopicsData', 'excelRawDataV1', 'excelRawDataV2'].forEach(key => {
+            if (typeof updatedState[key] === 'string' && updatedState[key].includes(':')) {
+                delete updatedState[key];
+            }
+        });
 
         gameState = { ...gameState, ...updatedState };
         broadcastState();
     });
 
     socket.on('consume-action', () => {
-        if (!socket.rooms.has('Controller')) return;
+        if (!socket.rooms.has('controller')) return;
         gameState.lastAction = '';
         broadcastState();
     });
@@ -172,11 +233,11 @@ io.on('connection', (socket) => {
     });
 });
 
-app.get('/Controller', (_req, res) => {
+app.get('/controller', (_req, res) => {
     res.sendFile(path.join(__dirname, 'Controller.html'));
 });
 
-app.get('/Screen', (_req, res) => {
+app.get('/screen', (_req, res) => {
     res.sendFile(path.join(__dirname, 'Screen.html'));
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "Khắc Nhập Khắc Xuất",
-  "description": "Hệ thống game show Khắc Nhập Khắc Xuất với bảo mật JWE cho màn hình Screen",
+  "description": "Hệ thống điều khiển và màn hình hiển thị game show Khắc Nhập Khắc Xuất với tính năng đọc đề Excel, hỗ trợ hình ảnh, video, audio từ Imgur và bảng tiền gắn cứng.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

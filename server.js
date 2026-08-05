@@ -1,222 +1,247 @@
 import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as jose from 'jose';
+import { createServer as createViteServer } from 'vite';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-    cors: { origin: "*" }
+// --- Server Asymmetric & Hybrid Encryption Setup ---
+const serverKeyPair = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'spki', format: 'jwk' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'jwk' }
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.use(express.static(__dirname));
-
-app.get('/jose.browser.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'jose.browser.js'));
-});
-
-app.get('/controller', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Controller.html'));
-});
-
-app.get('/screen', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Screen.html'));
-});
-
-app.get('/', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="vi">
-        <head>
-            <meta charset="UTF-8">
-            <title>Khắc Nhập Khắc Xuất - Hệ Thống Trò Chơi</title>
-            <style>
-                body { font-family: sans-serif; background: #0b0d1b; color: #fff; text-align: center; padding-top: 50px; }
-                h1 { color: #39ff14; }
-                a { color: #00ffff; font-size: 20px; margin: 0 15px; text-decoration: none; border: 1px solid #00ffff; padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 20px; }
-                a:hover { background: #00ffff; color: #000; }
-            </style>
-        </head>
-        <body>
-            <h1>Hệ Thống Khắc Nhập Khắc Xuất Đã Sẵn Sàng</h1>
-            <p>Vui lòng chọn trang điều khiển hoặc màn hình hiển thị sân khấu:</p>
-            <div>
-                <a href="/controller" target="_blank">Trang Điều Khiển (Controller)</a>
-                <a href="/screen" target="_blank">Màn Hình Hướng Sân Khấu (Screen)</a>
-            </div>
-        </body>
-        </html>
-    `);
-});
-
-let gameState = {
-    showMHC: true,
-    currentActiveRound: 1,
-    globalTotalPrize: 0,
-    currentMoneyLayoutV1: ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"],
-    currentMoneyLayoutV2: ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"],
-    isSo5Checked: false,
-    moneyAnimationChecked: false,
-    moneyGridStateV1: {},
-    moneyGridStateV2: {},
-    symbolBoxesStateV1: {},
-    symbolBoxesStateV2: {},
-    currentRoundData: {
-        topic: "CHỦ ĐỀ 1.1",
-        A: { text: 'Câu hỏi mẫu A', correct: true, excelAnsRaw: 'Đúng' },
-        B: { text: 'Câu hỏi mẫu B', correct: false, excelAnsRaw: 'Sai' },
-        C: { text: 'Câu hỏi mẫu C', correct: true, excelAnsRaw: 'Đúng' }
-    },
-    displayClasses: ['hide-money'],
-    activeQuestion: null,
-    activeSideSign: null,
-    round1CtrlState: {
-        selectedStatusAdmin: null,
-        trueBtnClass: "ans-btn",
-        falseBtnClass: "ans-btn"
-    },
-    round2CtrlState: {
-        text: 'ĐÁP ÁN',
-        isCorrect: true,
-        backgroundImage: "url('Whitebar2.png')",
-        textColor: "#000000"
-    },
-    usedChoices: { A: false, B: false, C: false },
-    currentRoundIndexR1: 0,
-    currentRoundIndexR2: 0,
-    round1TopicsData: [],
-    round2TopicsData: [],
-    lastAction: ''
+const serverPublicKeyJwk = {
+  ...serverKeyPair.publicKey,
+  alg: 'RSA-OAEP-256',
+  ext: true,
+  key_ops: ['encrypt']
 };
 
-// Tạo bộ lọc dữ liệu an toàn cho màn hình Screen (bảo mật tuyệt đối thông tin câu hỏi/đáp án)
-function buildScreenPayload(state) {
-    const curQuestion = state.activeQuestion;
-    
-    // Xây dựng object currentRoundData an toàn cho Screen
-    let safeRoundData = null;
-    if (state.currentRoundData) {
-        safeRoundData = {
-            topic: state.currentRoundData.topic || ""
-        };
+const clientKeysMap = new Map(); // socket.id -> clientJwk
 
-        ['A', 'B', 'C'].forEach(ch => {
-            const rawChoice = state.currentRoundData[ch];
-            if (rawChoice) {
-                // Chỉ gửi nội dung câu hỏi nếu câu hỏi đó đang được kích hoạt mở
-                const isThisQuestionActive = (curQuestion === ch);
-                safeRoundData[ch] = {
-                    text: isThisQuestionActive ? (rawChoice.text || "") : "",
-                    excelAnsRaw: "" // Luôn ẩn đáp án gốc trên Screen ngoại trừ khi được hiển thị kết quả
-                };
-            }
-        });
-    }
+function encryptPacketForClient(dataObj, clientJwk) {
+  if (!clientJwk) return dataObj;
+  try {
+    const jsonStr = JSON.stringify(dataObj);
+    const aesKey = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(12);
 
-    // Bảo vệ thông tin đáp án vòng 2 trừ khi đã được admin ấn lệnh tiết lộ
-    let safeRound2CtrlState = { ...state.round2CtrlState };
-    if (!state.displayClasses || (!state.displayClasses.includes('show-r2-ans') && !state.displayClasses.includes('show-r2-result'))) {
-        safeRound2CtrlState.text = "";
-    }
+    const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+    let ciphertext = cipher.update(jsonStr, 'utf8', 'base64');
+    ciphertext += cipher.final('base64');
+    const tag = cipher.getAuthTag().toString('base64');
+
+    const fullCiphertext = ciphertext + ':' + tag;
+
+    const publicKeyObj = crypto.createPublicKey({
+      key: clientJwk,
+      format: 'jwk'
+    });
+
+    const encryptedAesKey = crypto.publicEncrypt(
+      {
+        key: publicKeyObj,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: 'sha256'
+      },
+      aesKey
+    );
 
     return {
-        showMHC: state.showMHC,
-        currentActiveRound: state.currentActiveRound,
-        globalTotalPrize: state.globalTotalPrize,
-        currentMoneyLayoutV1: state.currentMoneyLayoutV1,
-        currentMoneyLayoutV2: state.currentMoneyLayoutV2,
-        isSo5Checked: state.isSo5Checked,
-        moneyAnimationChecked: state.moneyAnimationChecked,
-        moneyGridStateV1: state.moneyGridStateV1,
-        moneyGridStateV2: state.moneyGridStateV2,
-        symbolBoxesStateV1: state.symbolBoxesStateV1,
-        symbolBoxesStateV2: state.symbolBoxesStateV2,
-        currentRoundData: safeRoundData,
-        displayClasses: state.displayClasses,
-        activeQuestion: state.activeQuestion,
-        activeSideSign: state.activeSideSign,
-        round1CtrlState: state.round1CtrlState,
-        round2CtrlState: safeRound2CtrlState,
-        usedChoices: state.usedChoices,
-        lastAction: state.lastAction
-        // Tuyệt đối KHÔNG bao giờ gửi excelRawDataV1, excelRawDataV2, round1TopicsData, round2TopicsData sang Screen!
+      k: encryptedAesKey.toString('base64'),
+      i: iv.toString('base64'),
+      d: fullCiphertext
     };
+  } catch (err) {
+    console.error('Server encryption error:', err);
+    return dataObj;
+  }
 }
 
-// Gửi payload đã được mã hóa JWE tới socket
-async function emitEncryptedState(socket) {
-    try {
-        const payloadToEncrypt = (socket.clientType === 'screen')
-            ? buildScreenPayload(gameState)
-            : gameState;
-
-        if (socket.publicKey) {
-            const jsonStr = JSON.stringify(payloadToEncrypt);
-            const jwe = await new jose.CompactEncrypt(new TextEncoder().encode(jsonStr))
-                .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
-                .encrypt(socket.publicKey);
-
-            socket.emit('sync-full-state', { jwe });
-        } else {
-            // Trường hợp socket chưa đăng ký khoá công khai
-            socket.emit('sync-full-state', { jwe: null, pendingKey: true });
-        }
-    } catch (err) {
-        console.error('Lỗi khi mã hóa JWE payload:', err);
-    }
-}
-
-// Phát lại trạng thái tới tất cả các kết nối
-async function broadcastState() {
-    const sockets = await io.fetchSockets();
-    for (const socket of sockets) {
-        await emitEncryptedState(socket);
-    }
-}
-
-io.on('connection', (socket) => {
-    socket.on('register-client-key', async (data) => {
-        try {
-            if (data && data.publicKeyJwk) {
-                socket.publicKey = await jose.importJWK(data.publicKeyJwk, 'RSA-OAEP-256');
-                socket.clientType = data.clientType || 'unknown';
-            }
-        } catch (err) {
-            console.error('Lỗi đăng ký khóa công khai:', err);
-        }
-        await emitEncryptedState(socket);
+function decryptPacketFromClient(pkg) {
+  if (!pkg || typeof pkg !== 'object' || !pkg.k || !pkg.i || !pkg.d) {
+    return pkg;
+  }
+  try {
+    const encryptedKeyBuf = Buffer.from(pkg.k, 'base64');
+    const privateKeyObj = crypto.createPrivateKey({
+      key: serverKeyPair.privateKey,
+      format: 'jwk'
     });
 
-    socket.on('trigger-sound', (data) => {
-        if (data && data.sound === 'stop_all') {
-            io.emit('stop-all-sounds-client');
-        } else {
-            io.emit('play-sound-client', data);
-        }
+    const aesKey = crypto.privateDecrypt(
+      {
+        key: privateKeyObj,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: 'sha256'
+      },
+      encryptedKeyBuf
+    );
+
+    const parts = pkg.d.split(':');
+    const ciphertextBuf = Buffer.from(parts[0], 'base64');
+    const tagBuf = Buffer.from(parts[1], 'base64');
+    const ivBuf = Buffer.from(pkg.i, 'base64');
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, ivBuf);
+    decipher.setAuthTag(tagBuf);
+    let decrypted = decipher.update(ciphertextBuf, null, 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return JSON.parse(decrypted);
+  } catch (err) {
+    console.error('Server decryption error:', err);
+    return pkg;
+  }
+}
+
+function emitToSocketEncrypted(targetSocket, eventName, dataObj) {
+  const clientJwk = clientKeysMap.get(targetSocket.id);
+  if (clientJwk) {
+    targetSocket.emit(eventName, encryptPacketForClient(dataObj, clientJwk));
+  } else {
+    targetSocket.emit(eventName, dataObj);
+  }
+}
+
+function broadcastEncrypted(ioServer, eventName, dataObj) {
+  for (const [id, skt] of ioServer.sockets.sockets) {
+    const clientJwk = clientKeysMap.get(id);
+    if (clientJwk) {
+      skt.emit(eventName, encryptPacketForClient(dataObj, clientJwk));
+    } else {
+      skt.emit(eventName, dataObj);
+    }
+  }
+}
+
+const DEFAULT_LAYOUT_V1 = ["0 $A", "500 $A", "500 $A", "750 $A", "750 $A", "750 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
+const TABLE1_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+const TABLE2_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "4", "5"];
+
+let gameState = {
+  showMHC: true,
+  currentActiveRound: 1,
+  globalTotalPrize: 0,
+  currentMoneyLayoutV1: [...DEFAULT_LAYOUT_V1],
+  currentMoneyLayoutV2: [...TABLE1_V2],
+  isSo5Checked: false,
+  moneyAnimationChecked: false,
+  moneyGridStateV1: {}, 
+  moneyGridStateV2: {},   
+  symbolBoxesStateV1: {}, 
+  symbolBoxesStateV2: {}, 
+  currentRoundData: {
+    topic: "TỪ CHỦ ĐỀ 1",
+    A: { text: 'Câu hỏi mẫu A', correct: true, excelAnsRaw: '' },
+    B: { text: 'Câu hỏi mẫu B', correct: false, excelAnsRaw: '' },
+    C: { text: 'Câu hỏi mẫu C', correct: true, excelAnsRaw: '' }
+  },
+  displayClasses: [],
+  activeQuestion: null,
+  round1CtrlState: {
+    selectedStatusAdmin: null,
+    trueBtnClass: "ans-btn",
+    falseBtnClass: "ans-btn"
+  },
+  round2CtrlState: {
+    text: 'ĐÁP ÁN',
+    isCorrect: true,
+    backgroundImage: "url('Whitebar2.png')",
+    textColor: "#000000"
+  },
+  usedChoices: { A: false, B: false, C: false },
+  currentRoundIndexR1: 0,
+  currentRoundIndexR2: 0,
+  round1TopicsData: [],
+  round2TopicsData: [],
+  lastAction: ''
+};
+
+async function startServer() {
+  const app = express();
+  const server = http.createServer(app);
+  const io = new SocketIOServer(server, {
+    cors: { origin: "*" }
+  });
+
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+  app.use(express.static(__dirname));
+
+  app.get('/controller', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Controller.html'));
+  });
+
+  app.get('/screen', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Screen.html'));
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  io.on('connection', (socket) => {
+    socket.on('register-client-key', (data) => {
+      if (data && data.jwk) {
+        clientKeysMap.set(socket.id, data.jwk);
+      }
+      socket.emit('init-handshake', { jwk: serverPublicKeyJwk });
+      emitToSocketEncrypted(socket, 'sync-full-state', gameState);
     });
 
-    socket.on('update-game-state', async (updatedState) => {
+    socket.on('trigger-sound', (rawPayload) => {
+      const data = decryptPacketFromClient(rawPayload);
+      if (data && data.sound === 'stop_all') {
+        broadcastEncrypted(io, 'stop-all-sounds-client', {});
+      } else {
+        broadcastEncrypted(io, 'play-sound-client', data);
+      }
+    });
+      
+    socket.on('update-game-state', (rawPayload) => {
+      const updatedState = decryptPacketFromClient(rawPayload);
+      if (updatedState && typeof updatedState === 'object') {
         gameState = { ...gameState, ...updatedState };
-        await broadcastState();
+        broadcastEncrypted(io, 'sync-full-state', gameState);
+      }
     });
 
-    socket.on('consume-action', async () => {
-        gameState.lastAction = '';
-        await broadcastState();
+    socket.on('consume-action', () => {
+      gameState.lastAction = '';
+      broadcastEncrypted(io, 'sync-full-state', gameState);
     });
 
-    socket.on('trigger-popup', (msg) => {
-        io.emit('display-popup', msg);
+    socket.on('trigger-popup', (rawPayload) => {
+      const msg = decryptPacketFromClient(rawPayload);
+      broadcastEncrypted(io, 'display-popup', msg);
     });
-});
 
-httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server Khắc Nhập Khắc Xuất đang chạy tại port: ${PORT}`);
-});
+    socket.on('disconnect', () => {
+      clientKeysMap.delete(socket.id);
+    });
+  });
+
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+  }
+
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+startServer();

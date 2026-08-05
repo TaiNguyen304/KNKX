@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <title>Khắc Nhập Khắc Xuất - Screen</title>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/jose.browser.js"></script>
     <style>
         * {
             font-weight: bold !important;
             user-select: none;
+            box-sizing: border-box;
         }
 
         body {
@@ -19,17 +19,17 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            background-color: #000040;
             background-image: url('bg1.png');
             background-size: cover;
             background-position: center;
-            background-color: #04081c;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
         }
 
         .game-board {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: 'Arial', sans-serif;
             gap: 10px;
             transform: scale(1.5);
             transform-origin: center center;
@@ -68,6 +68,7 @@
         .main-prize {
             position: relative;
             z-index: 2;
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 85px;
@@ -80,6 +81,7 @@
             transform-origin: center center !important;
             will-change: transform, width;
             transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            border-radius: 8px;
         }
 
         .main-prize[data-anim="active"] {
@@ -89,24 +91,6 @@
         .prize-container.has-signs .main-prize {
             width: 460px;
             animation: stretch460 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        @keyframes moneyCloseOpen {
-            0% {
-                transform: scaleX(1);
-            }
-
-            50% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
-        }
-
-        .prize-container.has-signs .main-prize {
-            width: 460px;
         }
 
         .prize-container:not(.has-signs) .main-prize {
@@ -121,6 +105,7 @@
         }
 
         .symbol-box {
+            background-color: #e0e0e0;
             background-image: url('SymbolStrap.png');
             background-size: 100% 100%;
             flex: 1;
@@ -130,6 +115,7 @@
             align-items: center;
             font-size: 36px;
             color: #000;
+            border-radius: 6px;
         }
 
         .game-board.round-2-mode .symbol-box {
@@ -137,10 +123,12 @@
         }
 
         .symbol-box.selected {
+            background-color: #ff9900;
             background-image: url('SymbolChooseStrap.png') !important;
         }
 
         .symbol-box.closed {
+            background-color: #555;
             background-image: url('SymbolCloseStrap.png') !important;
             color: transparent !important;
         }
@@ -162,6 +150,7 @@
         }
 
         .money-box {
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 60px;
@@ -170,13 +159,16 @@
             align-items: center;
             color: #000;
             font-size: 26px;
+            border-radius: 6px;
         }
 
         .money-box.selected {
+            background-color: #ff9900;
             background-image: url('ChooseStrap.png') !important;
         }
 
         .money-box.closed {
+            background-color: #555;
             background-image: url('CloseStrap.png') !important;
             color: transparent !important;
         }
@@ -187,6 +179,7 @@
 
         .topic-container {
             display: none;
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 660px;
@@ -198,12 +191,14 @@
             left: 0;
             transform: scaleX(0);
             transform-origin: center;
+            border-radius: 8px;
         }
 
         .topic-text {
             color: #000;
             font-size: 28px;
             opacity: 0;
+            text-align: center;
         }
 
         .choices-column {
@@ -217,6 +212,7 @@
         }
 
         .choice-box {
+            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 75px;
@@ -226,9 +222,11 @@
             align-items: center;
             transform: scaleX(0);
             transform-origin: center;
+            border-radius: 8px;
         }
 
         .choice-box.used {
+            background-color: #888;
             background-image: url('bbb.png') !important;
         }
 
@@ -259,29 +257,13 @@
             animation: fadeInText 0.2s ease-in-out forwards;
         }
 
-        .game-board.show-choices #choiceA {
-            animation-delay: 0s;
-        }
+        .game-board.show-choices #choiceA { animation-delay: 0s; }
+        .game-board.show-choices #choiceB { animation-delay: 0.25s; }
+        .game-board.show-choices #choiceC { animation-delay: 0.5s; }
 
-        .game-board.show-choices #choiceB {
-            animation-delay: 0.25s;
-        }
-
-        .game-board.show-choices #choiceC {
-            animation-delay: 0.5s;
-        }
-
-        .game-board.show-choices #choiceA .choice-text {
-            animation-delay: 0.3s;
-        }
-
-        .game-board.show-choices #choiceB .choice-text {
-            animation-delay: 0.55s;
-        }
-
-        .game-board.show-choices #choiceC .choice-text {
-            animation-delay: 0.8s;
-        }
+        .game-board.show-choices #choiceA .choice-text { animation-delay: 0.3s; }
+        .game-board.show-choices #choiceB .choice-text { animation-delay: 0.55s; }
+        .game-board.show-choices #choiceC .choice-text { animation-delay: 0.8s; }
 
         .question-area {
             display: none;
@@ -295,6 +277,7 @@
         .question-box {
             width: 100%;
             height: 100%;
+            background-color: #ffffff;
             background-size: 100% 100%;
             display: flex;
             align-items: center;
@@ -302,6 +285,9 @@
             box-sizing: border-box;
             transform: scaleX(0);
             transform-origin: left center;
+            border-radius: 12px;
+            border: 3px solid #ffd700;
+            overflow-y: auto;
         }
 
         .game-board.round-2-mode .question-box {
@@ -313,6 +299,16 @@
             font-size: 22px;
             line-height: 1.4;
             opacity: 0;
+            width: 100%;
+        }
+
+        .question-content img, .question-content video {
+            max-width: 100%;
+            max-height: 170px;
+            object-fit: contain;
+            border-radius: 6px;
+            display: block;
+            margin: 6px auto;
         }
 
         .answer-buttons {
@@ -331,6 +327,7 @@
         }
 
         .ans-btn {
+            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 100px;
@@ -340,19 +337,23 @@
             align-items: center;
             color: #000;
             font-size: 24px;
+            border-radius: 8px;
         }
 
         .ans-btn.chosen {
+            background-color: #333;
             background-image: url('true false choose strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.correct-final {
+            background-color: #00aa00;
             background-image: url('truefalseright strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.wrong-final {
+            background-color: #cc0000;
             background-image: url('truefalsewrongstrap.png') !important;
             color: #fff !important;
         }
@@ -388,12 +389,16 @@
         .round2-answer-box {
             width: 100%;
             height: 100%;
+            background-color: #ffffff;
             background-size: 100% 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             transform: scaleX(0);
             transform-origin: center;
+            border-radius: 10px;
+            border: 3px solid #ffd700;
+            padding: 8px;
         }
 
         .round2-answer-text {
@@ -402,6 +407,14 @@
             text-align: center;
             opacity: 0;
             text-transform: uppercase;
+            width: 100%;
+        }
+
+        .round2-answer-text img, .round2-answer-text video {
+            max-width: 100%;
+            max-height: 80px;
+            object-fit: contain;
+            border-radius: 6px;
         }
 
         .game-board.round-2-mode.show-r2-ans .question-area {
@@ -475,7 +488,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: transparent;
+            background-color: rgba(0,0,64,0.9);
             background-image: url('MHC.png');
             background-size: cover;
             background-position: center;
@@ -491,136 +504,55 @@
             animation: fadeInUpMoney 0.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        .money-text-inner {
-            display: inline-block;
-            transform-origin: center center;
-            will-change: transform;
-        }
-
-        .money-text-inner[data-anim="active"] {
-            animation: moneyCloseOpenInner 0.6s linear forwards;
-        }
-
-        @keyframes moneyCloseOpenInner {
-            0% {
-                transform: scaleX(1);
-            }
-
-            50% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
+        @keyframes moneyCloseOpen {
+            0% { transform: scaleX(1); }
+            50% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
         }
 
         @keyframes signSlideLeft {
-            0% {
-                transform: translateX(100px) scale(0.5);
-                opacity: 0;
-            }
-
-            100% {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
+            0% { transform: translateX(100px) scale(0.5); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
         }
 
         @keyframes signSlideRight {
-            0% {
-                transform: translateX(-100px) scale(0.5);
-                opacity: 0;
-            }
-
-            100% {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
+            0% { transform: translateX(-100px) scale(0.5); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
         }
 
         @keyframes stretchAcross {
-            0% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
         }
 
         @keyframes fadeInText {
-            0% {
-                opacity: 0;
-            }
-
-            100% {
-                opacity: 1;
-            }
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
         @keyframes shrinkLeft {
-            0% {
-                transform: scaleX(1);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scaleX(0);
-                opacity: 0;
-            }
+            0% { transform: scaleX(1); opacity: 1; }
+            100% { transform: scaleX(0); opacity: 0; }
         }
 
         @keyframes stretchFromCenter {
-            0% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
         }
 
         @keyframes shrinkToCenter {
-            0% {
-                transform: scaleX(1);
-            }
-
-            100% {
-                transform: scaleX(0);
-            }
+            0% { transform: scaleX(1); }
+            100% { transform: scaleX(0); }
         }
 
         @keyframes fadeInUpMoney {
-            0% {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         @keyframes stretch460 {
-            0% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
-        }
-
-        @keyframes stretch660 {
-            0% {
-                transform: scaleX(0);
-            }
-
-            100% {
-                transform: scaleX(1);
-            }
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
         }
     </style>
 </head>
@@ -670,24 +602,162 @@
 
     <script>
         const socket = io();
-        let screenKeyPair = null;
 
-        // Khởi tạo khoá bất đối ứng RSA-OAEP-256 trên màn hình Screen
-        async function initScreenSecurity() {
+        // --- Client Crypto System ---
+        let clientKeyPair = null;
+        let serverPublicKeyObj = null;
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        function base64ToBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function initClientCrypto() {
+            clientKeyPair = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([1, 0, 1]),
+                    hash: "SHA-256"
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            const jwk = await window.crypto.subtle.exportKey("jwk", clientKeyPair.publicKey);
+            return jwk;
+        }
+
+        async function setServerPublicKey(serverJwk) {
+            const cleanJwk = {
+                kty: serverJwk.kty,
+                n: serverJwk.n,
+                e: serverJwk.e,
+                alg: "RSA-OAEP-256",
+                ext: true
+            };
+            serverPublicKeyObj = await window.crypto.subtle.importKey(
+                "jwk",
+                cleanJwk,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                false,
+                ["encrypt"]
+            );
+        }
+
+        async function encryptDataForServer(dataObj) {
+            if (!serverPublicKeyObj) return dataObj;
             try {
-                screenKeyPair = await jose.generateKeyPair('RSA-OAEP-256');
-                const publicKeyJwk = await jose.exportJWK(screenKeyPair.publicKey);
-                socket.emit('register-client-key', {
-                    clientType: 'screen',
-                    publicKeyJwk: publicKeyJwk
-                });
+                const rawAesKey = window.crypto.getRandomValues(new Uint8Array(32));
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const jsonStr = JSON.stringify(dataObj);
+                const encText = new TextEncoder().encode(jsonStr);
+
+                const aesKey = await window.crypto.subtle.importKey(
+                    "raw",
+                    rawAesKey,
+                    { name: "AES-GCM" },
+                    false,
+                    ["encrypt"]
+                );
+
+                const cipherBuffer = await window.crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv },
+                    aesKey,
+                    encText
+                );
+
+                const cipherArray = new Uint8Array(cipherBuffer);
+                const tagLength = 16;
+                const dataBytes = cipherArray.slice(0, cipherArray.length - tagLength);
+                const tagBytes = cipherArray.slice(cipherArray.length - tagLength);
+
+                const ciphertextBase64 = arrayBufferToBase64(dataBytes.buffer);
+                const tagBase64 = arrayBufferToBase64(tagBytes.buffer);
+                const fullCiphertext = ciphertextBase64 + ':' + tagBase64;
+
+                const encryptedKeyBuf = await window.crypto.subtle.encrypt(
+                    { name: "RSA-OAEP" },
+                    serverPublicKeyObj,
+                    rawAesKey.buffer
+                );
+
+                return {
+                    k: arrayBufferToBase64(encryptedKeyBuf),
+                    i: arrayBufferToBase64(iv.buffer),
+                    d: fullCiphertext
+                };
             } catch (err) {
-                console.error('Lỗi khởi tạo RSA keypair trên Screen:', err);
+                console.error("Client encryption error:", err);
+                return dataObj;
             }
         }
 
-        socket.on('connect', () => {
-            initScreenSecurity();
+        async function decryptDataFromServer(pkg) {
+            if (!pkg || typeof pkg !== 'object' || !pkg.k || !pkg.i || !pkg.d || !clientKeyPair) {
+                return pkg;
+            }
+            try {
+                const encryptedKeyBuf = base64ToBuffer(pkg.k);
+                const aesKeyRaw = await window.crypto.subtle.decrypt(
+                    { name: "RSA-OAEP" },
+                    clientKeyPair.privateKey,
+                    encryptedKeyBuf
+                );
+
+                const aesKey = await window.crypto.subtle.importKey(
+                    "raw",
+                    aesKeyRaw,
+                    { name: "AES-GCM" },
+                    false,
+                    ["decrypt"]
+                );
+
+                const parts = pkg.d.split(':');
+                const dataBytes = new Uint8Array(base64ToBuffer(parts[0]));
+                const tagBytes = new Uint8Array(base64ToBuffer(parts[1]));
+
+                const combined = new Uint8Array(dataBytes.length + tagBytes.length);
+                combined.set(dataBytes, 0);
+                combined.set(tagBytes, dataBytes.length);
+
+                const ivBuf = base64ToBuffer(pkg.i);
+
+                const decryptedBuf = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: ivBuf },
+                    aesKey,
+                    combined.buffer
+                );
+
+                const decStr = new TextDecoder().decode(decryptedBuf);
+                return JSON.parse(decStr);
+            } catch (err) {
+                console.error("Client decryption error:", err);
+                return pkg;
+            }
+        }
+
+        socket.on('connect', async () => {
+            const jwk = await initClientCrypto();
+            socket.emit('register-client-key', { jwk });
+        });
+
+        socket.on('init-handshake', async (data) => {
+            if (data && data.jwk) {
+                await setServerPublicKey(data.jwk);
+            }
         });
 
         let audioUnlocked = false;
@@ -714,7 +784,8 @@
             audioCache[soundName] = audio;
         });
 
-        socket.on('play-sound-client', (data) => {
+        socket.on('play-sound-client', async (rawPayload) => {
+            const data = await decryptDataFromServer(rawPayload);
             if (!data || !data.sound) return;
             const soundName = data.sound;
             if (audioCache[soundName]) {
@@ -728,7 +799,8 @@
             }
         });
 
-        socket.on('stop-all-sounds-client', () => {
+        socket.on('stop-all-sounds-client', async (rawPayload) => {
+            await decryptDataFromServer(rawPayload);
             if (currentBackgroundMusic) {
                 currentBackgroundMusic.pause();
                 currentBackgroundMusic.currentTime = 0;
@@ -741,28 +813,85 @@
             });
         });
 
+        socket.on('display-popup', async (rawPayload) => {
+            const msg = await decryptDataFromServer(rawPayload);
+            if (msg) alert(msg);
+        });
+
         let wasHiddenBefore = true;
         let activeDingIndexes = new Set();
         let currentRenderSession = 0;
         let isAnimatingMoney = false;
 
-        // Xử lý gói tin nhận từ Server (TẤT CẢ GÓI TIN ĐỀU ĐƯỢC MÃ HÓA JWE TRÊN F12 NETWORK)
-        socket.on('sync-full-state', async (envelope) => {
-            let state = null;
-
-            if (envelope && envelope.jwe && screenKeyPair) {
-                try {
-                    // Giải mã JWE bất đối xứng bằng khoá Private Key trong bộ nhớ Screen
-                    const { plaintext } = await jose.compactDecrypt(envelope.jwe, screenKeyPair.privateKey);
-                    state = JSON.parse(new TextDecoder().decode(plaintext));
-                } catch (e) {
-                    console.error('Không thể giải mã JWE payload:', e);
-                    return;
-                }
-            } else if (envelope && !envelope.jwe && !envelope.pendingKey) {
-                state = envelope;
+        function parseMediaContent(rawText) {
+            if (!rawText) return { text: '', mediaType: null, mediaUrl: '' };
+            let str = String(rawText).trim();
+            const urlRegex = /(https?:\/\/[^\s]+)/gi;
+            const matches = str.match(urlRegex);
+            
+            if (!matches || matches.length === 0) {
+                return { text: str, mediaType: null, mediaUrl: '' };
             }
+            
+            let rawUrl = matches[0];
+            let cleanText = str.replace(rawUrl, '').trim();
+            let lowerUrl = rawUrl.toLowerCase();
+            let mediaType = null;
+            let mediaUrl = rawUrl;
+            
+            if (lowerUrl.includes('imgur.com') && lowerUrl.endsWith('.gifv')) {
+                mediaUrl = rawUrl.replace(/\.gifv$/i, '.mp4');
+                mediaType = 'video';
+            } else if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(lowerUrl) || lowerUrl.includes('v.imgur.com')) {
+                mediaType = 'video';
+            } else if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(lowerUrl)) {
+                mediaType = 'audio';
+            } else if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(lowerUrl)) {
+                mediaType = 'image';
+            } else if (lowerUrl.includes('imgur.com')) {
+                let match = rawUrl.match(/imgur\.com\/(?:a\/|gallery\/)?([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    mediaUrl = `https://i.imgur.com/${match[1]}.png`;
+                    mediaType = 'image';
+                } else {
+                    mediaType = 'image';
+                }
+            } else {
+                mediaType = 'image';
+            }
+            
+            return {
+                text: cleanText,
+                mediaType: mediaType,
+                mediaUrl: mediaUrl,
+                rawUrl: rawUrl
+            };
+        }
 
+        function renderQuestionHTML(elementId, rawText) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (!rawText) {
+                el.innerHTML = '';
+                return;
+            }
+            const parsed = parseMediaContent(rawText);
+            let html = '';
+            if (parsed.text) {
+                html += `<div style="margin-bottom: 6px;">${parsed.text}</div>`;
+            }
+            if (parsed.mediaType === 'image') {
+                html += `<div style="display:flex; justify-content:center; width:100%;"><img src="${parsed.mediaUrl}" alt="Media" style="max-width:100%; max-height:160px; object-fit:contain; border-radius:6px;" onerror="if(this.src!=='${parsed.rawUrl}') this.src='${parsed.rawUrl}';" /></div>`;
+            } else if (parsed.mediaType === 'video') {
+                html += `<div style="display:flex; justify-content:center; width:100%;"><video src="${parsed.mediaUrl}" controls autoplay loop style="max-width:100%; max-height:160px; border-radius:6px;"></video></div>`;
+            } else if (parsed.mediaType === 'audio') {
+                html += `<div style="width:100%; margin-top:6px;"><audio src="${parsed.mediaUrl}" controls autoplay style="width:100%; height:40px;"></audio></div>`;
+            }
+            el.innerHTML = html;
+        }
+
+        socket.on('sync-full-state', async (rawPayload) => {
+            const state = await decryptDataFromServer(rawPayload);
             if (!state) return;
 
             // 1. MHC Overlay
@@ -788,7 +917,7 @@
                 container.classList.remove('has-signs');
             }
 
-            // 4. Kiểm soát tuyệt đối logic Animation Tiền trên Shape
+            // 4. Money Animation
             let mainPrizeBox = document.querySelector('.main-prize');
             let totalPrizeEl = document.getElementById('totalPrize');
             const hasAnimationTrigger = (state.lastAction === 'moneyAnim_increase' || state.lastAction === 'moneyAnim_decrease');
@@ -796,8 +925,7 @@
             if (hasAnimationTrigger && !isAnimatingMoney) {
                 isAnimatingMoney = true;
                 const currentAnimType = state.lastAction;
-
-                socket.emit('consume-action');
+                encryptDataForServer({}).then(enc => socket.emit('consume-action', enc));
 
                 const soundName = currentAnimType === 'moneyAnim_increase' ? 'value_increase.mp3' : 'value_decrease.mp3';
                 if (audioCache[soundName]) {
@@ -807,7 +935,7 @@
                 }
 
                 mainPrizeBox.style.animation = 'none';
-                mainPrizeBox.offsetHeight; // Trigger reflow
+                mainPrizeBox.offsetHeight;
                 mainPrizeBox.style.animation = 'moneyCloseOpen 0.6s linear forwards';
 
                 setTimeout(() => {
@@ -903,7 +1031,7 @@
             });
 
             if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
-                document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text || '';
+                renderQuestionHTML('questionContent', state.currentRoundData[state.activeQuestion].text);
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
                 if (state.round1CtrlState) {
                     document.getElementById('trueBtn').className = state.round1CtrlState.trueBtnClass || 'ans-btn';
@@ -914,35 +1042,13 @@
             }
 
             const r2Box = document.getElementById('round2AnswerBox');
-            const r2Txt = document.getElementById('round2AnswerText');
-            if (r2Box && r2Txt && state.round2CtrlState) {
+            if (r2Box && state.round2CtrlState) {
                 r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
-                r2Txt.innerText = state.round2CtrlState.text || '';
-                r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+                renderQuestionHTML('round2AnswerText', state.round2CtrlState.text || '');
+                const txtEl = document.getElementById('round2AnswerText');
+                if (txtEl) txtEl.style.color = state.round2CtrlState.textColor || '#000000';
             }
         });
-
-        function disableDevTools() {
-            document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            document.addEventListener('keydown', (e) => {
-                if (
-                    e.key === 'F12' ||
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
-                    (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
-                ) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
-
-            setInterval(() => {
-                console.clear();
-            }, 1000);
-        }
-
-        window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>
 

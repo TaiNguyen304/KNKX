@@ -6,17 +6,17 @@
     <title>Khắc Nhập Khắc Xuất - Controller</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/jose.browser.js"></script>
     <style>
         * {
             font-weight: bold !important;
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 20px;
-            font-family: 'Arial', sans-serif;
-            background-color: navy;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background-color: #000040;
             color: #ffffff;
             display: flex;
             flex-direction: column;
@@ -35,7 +35,7 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid #444;
@@ -67,6 +67,7 @@
         .main-prize {
             position: relative;
             z-index: 2;
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 450px;
@@ -79,6 +80,7 @@
             cursor: pointer;
             box-sizing: border-box;
             transition: width 0.3s ease;
+            border-radius: 6px;
         }
 
         .prize-container.has-signs .main-prize {
@@ -92,6 +94,7 @@
         }
 
         .symbol-box {
+            background-color: #e0e0e0;
             background-image: url('SymbolStrap.png');
             background-size: 100% 100%;
             flex: 1;
@@ -102,13 +105,16 @@
             font-size: 24px;
             color: #000000;
             cursor: pointer;
+            border-radius: 4px;
         }
 
         .symbol-box.selected {
+            background-color: #ff9900;
             background-image: url('SymbolChooseStrap.png') !important;
         }
 
         .symbol-box.closed {
+            background-color: #555;
             background-image: url('SymbolCloseStrap.png') !important;
             color: transparent !important;
             pointer-events: none;
@@ -133,6 +139,7 @@
         }
 
         .money-box {
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             display: flex;
@@ -143,13 +150,16 @@
             cursor: pointer;
             height: 40px;
             box-sizing: border-box;
+            border-radius: 4px;
         }
 
         .money-box.selected {
+            background-color: #ff9900;
             background-image: url('ChooseStrap.png') !important;
         }
 
         .money-box.closed {
+            background-color: #555;
             background-image: url('CloseStrap.png') !important;
             color: transparent !important;
             pointer-events: none;
@@ -161,6 +171,7 @@
 
         .topic-container {
             display: none;
+            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 450px;
@@ -170,11 +181,14 @@
             position: absolute;
             top: 0;
             left: 0;
+            border-radius: 6px;
         }
 
         .topic-text {
             color: #000;
             font-size: 20px;
+            text-align: center;
+            padding: 0 10px;
         }
 
         .choices-column {
@@ -188,6 +202,7 @@
         }
 
         .choice-box {
+            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 50px;
@@ -195,9 +210,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            border-radius: 6px;
         }
 
         .choice-box.used {
+            background-color: #888;
             background-image: url('bbb.png') !important;
         }
 
@@ -226,12 +243,15 @@
         .question-box {
             width: 100%;
             height: 100%;
+            background-color: #ffffff;
             background-size: 100% 100%;
             display: flex;
             align-items: center;
             padding: 10px 90px 10px 15px;
             box-sizing: border-box;
-            transform-origin: left center;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            overflow-y: auto;
         }
 
         .game-board.round-2-mode .question-box {
@@ -242,6 +262,16 @@
             color: #000;
             font-size: 15px;
             line-height: 1.3;
+            width: 100%;
+        }
+
+        .question-content img, .question-content video {
+            max-width: 100%;
+            max-height: 110px;
+            object-fit: contain;
+            border-radius: 4px;
+            display: block;
+            margin: 4px auto;
         }
 
         .answer-buttons {
@@ -259,6 +289,7 @@
         }
 
         .ans-btn {
+            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 70px;
@@ -268,19 +299,24 @@
             align-items: center;
             color: #000;
             font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
         }
 
         .ans-btn.chosen {
+            background-color: #333;
             background-image: url('true false choose strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.correct-final {
+            background-color: #00aa00;
             background-image: url('truefalseright strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.wrong-final {
+            background-color: #cc0000;
             background-image: url('truefalsewrongstrap.png') !important;
             color: #fff !important;
         }
@@ -304,17 +340,29 @@
         .round2-answer-box {
             width: 100%;
             height: 100%;
+            background-color: #ffffff;
             background-size: 100% 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            padding: 5px;
         }
 
         .round2-answer-text {
             color: #000;
-            font-size: 22px;
+            font-size: 20px;
             text-align: center;
             text-transform: uppercase;
+            width: 100%;
+        }
+
+        .round2-answer-text img, .round2-answer-text video {
+            max-width: 100%;
+            max-height: 50px;
+            object-fit: contain;
+            border-radius: 4px;
         }
 
         .panels-container {
@@ -328,7 +376,7 @@
         }
 
         .controls-panel {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             padding: 15px;
             border-radius: 10px;
             display: flex;
@@ -336,6 +384,7 @@
             gap: 10px;
             width: 520px;
             box-sizing: border-box;
+            border: 1px solid #555;
         }
 
         .sound-panel {
@@ -367,6 +416,7 @@
             cursor: pointer;
             color: #fff;
             background-color: #333;
+            transition: background-color 0.2s;
         }
 
         .btn:hover {
@@ -375,15 +425,16 @@
         }
 
         .btn-sign {
-            background-color: blue !important;
+            background-color: #00008b !important;
         }
 
         .btn-round-toggle {
-            background-color: blue !important;
+            background-color: #00008b !important;
         }
 
         .btn-round-toggle.active-round {
             background-color: #800080 !important;
+            border-color: #39ff14 !important;
         }
 
         .btn-view {
@@ -419,7 +470,7 @@
             color: #ffffff !important;
             border: 1px solid #fff;
             height: 40px;
-            min-width: 150px;
+            min-width: 140px;
             flex: 1 1 30%;
         }
 
@@ -464,7 +515,7 @@
             color: #000;
             padding: 20px;
             border-radius: 8px;
-            width: 320px;
+            width: 340px;
             text-align: center;
         }
 
@@ -489,24 +540,11 @@
         .popup-actions .btn {
             flex: 1;
         }
-
-        .sec-badge {
-            font-size: 11px;
-            color: #39ff14;
-            background: rgba(0,255,0,0.1);
-            padding: 2px 8px;
-            border-radius: 10px;
-            border: 1px solid #39ff14;
-            margin-left: 10px;
-        }
     </style>
 </head>
 
 <body>
-    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-        <h2 style="margin: 0; color: #39ff14;">KHẮC NHẬP KHẮC XUẤT - BẢNG ĐIỀU KHIỂN</h2>
-        <span class="sec-badge">🔒 Bảo Mật Asymmetric JWE Active</span>
-    </div>
+    <div class="main-title">BẢNG ĐIỀU KHIỂN (CONTROLLER) - KHẮC NHẬP KHẮC XUẤT</div>
 
     <div class="game-board hide-money" id="gameBoard">
         <div class="prize-container" id="prizeContainer">
@@ -575,6 +613,7 @@
                 <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
                 <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
             </div>
+
             <div class="controls-row">
                 <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
                 <button class="btn btn-view" onclick="showABCMenu()">HIỆN A, B, C</button>
@@ -583,33 +622,40 @@
                 <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
                     onchange="handleExcel(event)">
             </div>
+
             <div class="controls-row">
                 <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
                 <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
                 <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
             </div>
+
             <div class="controls-row" id="r1ActionRow">
                 <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
                 <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
                 <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
             </div>
+
             <div class="controls-row" id="r2ActionRow" style="display:none;">
                 <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
                 <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
                 <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
             </div>
-            <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2);">
-                <label style="font-size: 18px; color: #39ff14; cursor: pointer;">
+
+            <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                <label style="font-size: 18px; color: #39ff14; cursor: pointer; display: flex; align-items: center;">
                     <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
-                        style="transform: scale(1.5); margin-right: 10px;"> Số 5
+                        style="transform: scale(1.5); margin-right: 12px; cursor: pointer;">
+                    Số 5 (Chuyển Bảng 2 Vòng 2)
                 </label>
             </div>
+
             <div style="margin: 5px 0;">
-                <label style="color: #00ffff; font-size: 16px; cursor: pointer;">
+                <label style="color: #00ffff; font-size: 16px; cursor: pointer; display: flex; align-items: center;">
                     <input type="checkbox" id="chkMoneyAnim" onchange="toggleMoneyAnim(this.checked)"
-                        style="transform: scale(1.3); margin-right: 5px;"> Animation Tiền
+                        style="transform: scale(1.3); margin-right: 8px; cursor: pointer;"> Animation Tiền
                 </label>
             </div>
+
             <div class="controls-row">
                 <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
                 <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
@@ -651,9 +697,9 @@
             <h3 id="popupTitle" style="margin:0;">Nhập Đáp Án</h3>
             <input type="text" id="popupCandidateAns" class="input-popup-textbox" placeholder="Nhập đáp án thí sinh...">
             <div style="display: flex; justify-content: center; gap: 15px; margin-top: 5px;">
-                <label><input type="checkbox" id="chkCorrect" checked
+                <label style="cursor:pointer;"><input type="checkbox" id="chkCorrect" checked
                         onchange="document.getElementById('chkWrong').checked=!this.checked"> ĐÚNG</label>
-                <label><input type="checkbox" id="chkWrong"
+                <label style="cursor:pointer;"><input type="checkbox" id="chkWrong"
                         onchange="document.getElementById('chkCorrect').checked=!this.checked"> SAI</label>
             </div>
             <div class="popup-actions">
@@ -691,39 +737,187 @@
 
     <script>
         const socket = io();
-        let clientKeyPair = null;
 
-        async function initSecurity() {
+        // --- Client Crypto System ---
+        let clientKeyPair = null;
+        let serverPublicKeyObj = null;
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        function base64ToBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function initClientCrypto() {
+            clientKeyPair = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([1, 0, 1]),
+                    hash: "SHA-256"
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            const jwk = await window.crypto.subtle.exportKey("jwk", clientKeyPair.publicKey);
+            return jwk;
+        }
+
+        async function setServerPublicKey(serverJwk) {
+            const cleanJwk = {
+                kty: serverJwk.kty,
+                n: serverJwk.n,
+                e: serverJwk.e,
+                alg: "RSA-OAEP-256",
+                ext: true
+            };
+            serverPublicKeyObj = await window.crypto.subtle.importKey(
+                "jwk",
+                cleanJwk,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                false,
+                ["encrypt"]
+            );
+        }
+
+        async function encryptDataForServer(dataObj) {
+            if (!serverPublicKeyObj) return dataObj;
             try {
-                clientKeyPair = await jose.generateKeyPair('RSA-OAEP-256');
-                const publicKeyJwk = await jose.exportJWK(clientKeyPair.publicKey);
-                socket.emit('register-client-key', {
-                    clientType: 'controller',
-                    publicKeyJwk: publicKeyJwk
-                });
-            } catch (e) {
-                console.error('Lỗi khởi tạo khoá RSA-JWE Controller:', e);
+                const rawAesKey = window.crypto.getRandomValues(new Uint8Array(32));
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const jsonStr = JSON.stringify(dataObj);
+                const encText = new TextEncoder().encode(jsonStr);
+
+                const aesKey = await window.crypto.subtle.importKey(
+                    "raw",
+                    rawAesKey,
+                    { name: "AES-GCM" },
+                    false,
+                    ["encrypt"]
+                );
+
+                const cipherBuffer = await window.crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv },
+                    aesKey,
+                    encText
+                );
+
+                const cipherArray = new Uint8Array(cipherBuffer);
+                const tagLength = 16;
+                const dataBytes = cipherArray.slice(0, cipherArray.length - tagLength);
+                const tagBytes = cipherArray.slice(cipherArray.length - tagLength);
+
+                const ciphertextBase64 = arrayBufferToBase64(dataBytes.buffer);
+                const tagBase64 = arrayBufferToBase64(tagBytes.buffer);
+                const fullCiphertext = ciphertextBase64 + ':' + tagBase64;
+
+                const encryptedKeyBuf = await window.crypto.subtle.encrypt(
+                    { name: "RSA-OAEP" },
+                    serverPublicKeyObj,
+                    rawAesKey.buffer
+                );
+
+                return {
+                    k: arrayBufferToBase64(encryptedKeyBuf),
+                    i: arrayBufferToBase64(iv.buffer),
+                    d: fullCiphertext
+                };
+            } catch (err) {
+                console.error("Client encryption error:", err);
+                return dataObj;
             }
         }
 
-        socket.on('connect', () => {
-            initSecurity();
+        async function decryptDataFromServer(pkg) {
+            if (!pkg || typeof pkg !== 'object' || !pkg.k || !pkg.i || !pkg.d || !clientKeyPair) {
+                return pkg;
+            }
+            try {
+                const encryptedKeyBuf = base64ToBuffer(pkg.k);
+                const aesKeyRaw = await window.crypto.subtle.decrypt(
+                    { name: "RSA-OAEP" },
+                    clientKeyPair.privateKey,
+                    encryptedKeyBuf
+                );
+
+                const aesKey = await window.crypto.subtle.importKey(
+                    "raw",
+                    aesKeyRaw,
+                    { name: "AES-GCM" },
+                    false,
+                    ["decrypt"]
+                );
+
+                const parts = pkg.d.split(':');
+                const dataBytes = new Uint8Array(base64ToBuffer(parts[0]));
+                const tagBytes = new Uint8Array(base64ToBuffer(parts[1]));
+
+                const combined = new Uint8Array(dataBytes.length + tagBytes.length);
+                combined.set(dataBytes, 0);
+                combined.set(tagBytes, dataBytes.length);
+
+                const ivBuf = base64ToBuffer(pkg.i);
+
+                const decryptedBuf = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: ivBuf },
+                    aesKey,
+                    combined.buffer
+                );
+
+                const decStr = new TextDecoder().decode(decryptedBuf);
+                return JSON.parse(decStr);
+            } catch (err) {
+                console.error("Client decryption error:", err);
+                return pkg;
+            }
+        }
+
+        socket.on('connect', async () => {
+            const jwk = await initClientCrypto();
+            socket.emit('register-client-key', { jwk });
         });
 
-        let DEFAULT_LAYOUT_V1 = ["0 $A", "100 $A", "200 $A", "500 $A", "500 $A", "500 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
-        let DEFAULT_LAYOUT_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+        socket.on('init-handshake', async (data) => {
+            if (data && data.jwk) {
+                await setServerPublicKey(data.jwk);
+                sendUpdate();
+            }
+        });
+
+        socket.on('display-popup', async (rawPayload) => {
+            const msg = await decryptDataFromServer(rawPayload);
+            if (msg) showControllerAlert(msg);
+        });
+
+        // Gắn cứng bảng tiền theo yêu cầu
+        const HARDCODED_LAYOUT_V1 = ["0 $A", "500 $A", "500 $A", "750 $A", "750 $A", "750 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
+        const TABLE1_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
+        const TABLE2_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "4", "5"];
 
         let state = {
             currentActiveRound: 1,
             globalTotalPrize: 0,
             activeSideSign: null,
-            currentMoneyLayoutV1: [...DEFAULT_LAYOUT_V1],
-            currentMoneyLayoutV2: [...DEFAULT_LAYOUT_V2],
+            currentMoneyLayoutV1: [...HARDCODED_LAYOUT_V1],
+            currentMoneyLayoutV2: [...TABLE1_V2],
+            isSo5Checked: false,
             moneyGridStateV1: {},
             moneyGridStateV2: {},
             symbolBoxesStateV1: {},
             symbolBoxesStateV2: {},
-            currentRoundData: { topic: "CHỦ ĐỀ 1.1", A: { text: 'Trống', correct: true }, B: { text: 'Trống', correct: true }, C: { text: 'Trống', correct: true } },
+            currentRoundData: { topic: "TỪ CHỦ ĐỀ 1", A: { text: 'Trống', correct: true }, B: { text: 'Trống', correct: true }, C: { text: 'Trống', correct: true } },
             displayClasses: ['hide-money'],
             activeQuestion: null,
             round1CtrlState: { selectedStatusAdmin: null, trueBtnClass: "ans-btn", falseBtnClass: "ans-btn" },
@@ -739,8 +933,18 @@
 
         let isFirstTopicLoad = true;
 
-        function emitSound(soundName) { socket.emit('trigger-sound', { sound: soundName }); }
-        function emitStopSound() { socket.emit('trigger-sound', { sound: 'stop_all' }); }
+        async function emitSound(soundName) {
+            const enc = await encryptDataForServer({ sound: soundName });
+            socket.emit('trigger-sound', enc);
+        }
+        async function emitStopSound() {
+            const enc = await encryptDataForServer({ sound: 'stop_all' });
+            socket.emit('trigger-sound', enc);
+        }
+        async function sendPopup(msg) {
+            const enc = await encryptDataForServer(msg);
+            socket.emit('trigger-popup', enc);
+        }
 
         function setSideSign(signImg) {
             state.activeSideSign = signImg;
@@ -766,33 +970,86 @@
             sendUpdate();
         }
 
-        function sendUpdate() {
+        async function sendUpdate() {
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
-            socket.emit('update-game-state', state);
+            const encState = await encryptDataForServer(state);
+            socket.emit('update-game-state', encState);
             if (state.lastAction !== '') {
                 state.lastAction = '';
             }
         }
 
-        socket.on('sync-full-state', async (envelope) => {
-            let serverState = null;
-            if (envelope && envelope.jwe && clientKeyPair) {
-                try {
-                    const { plaintext } = await jose.compactDecrypt(envelope.jwe, clientKeyPair.privateKey);
-                    serverState = JSON.parse(new TextDecoder().decode(plaintext));
-                } catch (e) {
-                    console.error('Lỗi giải mã JWE trên Controller:', e);
-                    return;
-                }
-            } else if (envelope && !envelope.jwe && !envelope.pendingKey) {
-                serverState = envelope;
+        // Hàm hỗ trợ đọc Imgur / Media link trong câu hỏi
+        function parseMediaContent(rawText) {
+            if (!rawText) return { text: '', mediaType: null, mediaUrl: '' };
+            let str = String(rawText).trim();
+            const urlRegex = /(https?:\/\/[^\s]+)/gi;
+            const matches = str.match(urlRegex);
+            
+            if (!matches || matches.length === 0) {
+                return { text: str, mediaType: null, mediaUrl: '' };
             }
+            
+            let rawUrl = matches[0];
+            let cleanText = str.replace(rawUrl, '').trim();
+            let lowerUrl = rawUrl.toLowerCase();
+            let mediaType = null;
+            let mediaUrl = rawUrl;
+            
+            if (lowerUrl.includes('imgur.com') && lowerUrl.endsWith('.gifv')) {
+                mediaUrl = rawUrl.replace(/\.gifv$/i, '.mp4');
+                mediaType = 'video';
+            } else if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(lowerUrl) || lowerUrl.includes('v.imgur.com')) {
+                mediaType = 'video';
+            } else if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(lowerUrl)) {
+                mediaType = 'audio';
+            } else if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(lowerUrl)) {
+                mediaType = 'image';
+            } else if (lowerUrl.includes('imgur.com')) {
+                let match = rawUrl.match(/imgur\.com\/(?:a\/|gallery\/)?([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    mediaUrl = `https://i.imgur.com/${match[1]}.png`;
+                    mediaType = 'image';
+                } else {
+                    mediaType = 'image';
+                }
+            } else {
+                mediaType = 'image';
+            }
+            
+            return {
+                text: cleanText,
+                mediaType: mediaType,
+                mediaUrl: mediaUrl,
+                rawUrl: rawUrl
+            };
+        }
 
-            if (!serverState) return;
+        function renderQuestionHTML(elementId, rawText) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (!rawText) {
+                el.innerHTML = '';
+                return;
+            }
+            const parsed = parseMediaContent(rawText);
+            let html = '';
+            if (parsed.text) {
+                html += `<div style="margin-bottom: 4px;">${parsed.text}</div>`;
+            }
+            if (parsed.mediaType === 'image') {
+                html += `<div style="display:flex; justify-content:center; width:100%;"><img src="${parsed.mediaUrl}" alt="Media" style="max-width:100%; max-height:100px; object-fit:contain; border-radius:4px;" onerror="if(this.src!=='${parsed.rawUrl}') this.src='${parsed.rawUrl}';" /></div>`;
+            } else if (parsed.mediaType === 'video') {
+                html += `<div style="display:flex; justify-content:center; width:100%;"><video src="${parsed.mediaUrl}" controls autoplay loop style="max-width:100%; max-height:100px; border-radius:4px;"></video></div>`;
+            } else if (parsed.mediaType === 'audio') {
+                html += `<div style="width:100%; margin-top:4px;"><audio src="${parsed.mediaUrl}" controls autoplay style="width:100%; height:32px;"></audio></div>`;
+            }
+            el.innerHTML = html;
+        }
 
-            const isSo5Changed = (state && state.isSo5Checked !== serverState.isSo5Checked);
+        socket.on('sync-full-state', (serverState) => {
             state = serverState;
 
             if (!state.currentRoundData) {
@@ -810,10 +1067,6 @@
 
             const chkSo5 = document.getElementById('chkSo5');
             if (chkSo5) chkSo5.checked = !!state.isSo5Checked;
-
-            if (isSo5Changed && state.excelRawDataV2) {
-                updateMoneyLayoutV2ByCheck();
-            }
 
             if (document.getElementById('chkMoneyAnim')) {
                 document.getElementById('chkMoneyAnim').checked = !!state.moneyAnimationChecked;
@@ -858,7 +1111,7 @@
             });
 
             if (state.activeQuestion && state.currentRoundData && state.currentRoundData[state.activeQuestion]) {
-                document.getElementById('questionContent').innerText = state.currentRoundData[state.activeQuestion].text;
+                renderQuestionHTML('questionContent', state.currentRoundData[state.activeQuestion].text);
                 document.getElementById('questionBox').style.backgroundImage = `url('box${state.activeQuestion}.png')`;
 
                 if (state.round1CtrlState) {
@@ -870,11 +1123,11 @@
             }
 
             const r2Box = document.getElementById('round2AnswerBox');
-            const r2Txt = document.getElementById('round2AnswerText');
-            if (r2Box && r2Txt && state.round2CtrlState) {
+            if (r2Box && state.round2CtrlState) {
                 r2Box.style.backgroundImage = state.round2CtrlState.backgroundImage || "url('Whitebar2.png')";
-                r2Txt.innerText = state.round2CtrlState.text || 'ĐÁP ÁN';
-                r2Txt.style.color = state.round2CtrlState.textColor || '#000000';
+                renderQuestionHTML('round2AnswerText', state.round2CtrlState.text || 'ĐÁP ÁN');
+                const txtEl = document.getElementById('round2AnswerText');
+                if (txtEl) txtEl.style.color = state.round2CtrlState.textColor || '#000000';
             }
 
             document.getElementById('r1ActionRow').style.display = state.currentActiveRound === 1 ? 'flex' : 'none';
@@ -935,10 +1188,10 @@
 
         function moneyGridControl(action) {
             if (action === 'show') {
-                if (state.currentActiveRound === 1 && state.excelRawDataV1) {
-                    updateMoneyLayoutV1OnReset();
-                } else if (state.currentActiveRound === 2 && state.excelRawDataV2) {
-                    updateMoneyLayoutV2ByCheck();
+                if (state.currentActiveRound === 1) {
+                    state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
+                } else if (state.currentActiveRound === 2) {
+                    state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
                 }
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
                 state.lastAction = 'show';
@@ -964,12 +1217,8 @@
                 state.activeQuestion = null;
                 state.activeSideSign = null;
 
-                if (state.currentActiveRound === 1) {
-                    updateMoneyLayoutV1OnReset();
-                } else if (state.currentActiveRound === 2) {
-                    if (state.excelRawDataV2) updateMoneyLayoutV2ByCheck();
-                    else state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
-                }
+                state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
+                state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
 
                 state.displayClasses = state.displayClasses.filter(cls => cls !== 'hide-money');
                 state.lastAction = 'reset';
@@ -983,6 +1232,12 @@
             Object.keys(state.moneyGridStateV2).forEach(k => { if (state.moneyGridStateV2[k] === 'selected') delete state.moneyGridStateV2[k]; });
             Object.keys(state.symbolBoxesStateV1).forEach(k => { if (state.symbolBoxesStateV1[k] === 'selected') delete state.symbolBoxesStateV1[k]; });
             Object.keys(state.symbolBoxesStateV2).forEach(k => { if (state.symbolBoxesStateV2[k] === 'selected') delete state.symbolBoxesStateV2[k]; });
+
+            if (roundNum === 1) {
+                state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
+            } else {
+                state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
+            }
 
             state.displayClasses = ['hide-money'];
             state.activeQuestion = null;
@@ -1187,8 +1442,8 @@
             state.activeQuestion = null;
             isFirstTopicLoad = true;
 
-            state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
-            state.currentMoneyLayoutV2 = [...DEFAULT_LAYOUT_V2];
+            state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
+            state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
 
             if (state.currentActiveRound === 1) state.currentRoundIndexR1 = 0;
             else state.currentRoundIndexR2 = 0;
@@ -1202,49 +1457,16 @@
                 document.getElementById('txtTotalPrize').value = '0';
             }
 
-            socket.emit('trigger-popup', "HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
+            sendPopup("HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
             showControllerAlert("Hệ thống đã được đặt lại thành công!");
         }
 
         function triggerExcelInput() { document.getElementById('excelInput').click(); }
 
-        function updateMoneyLayoutV1OnReset() {
-            if (!state.excelRawDataV1 || state.excelRawDataV1.length === 0) {
-                state.currentMoneyLayoutV1 = [...DEFAULT_LAYOUT_V1];
-                return;
-            }
-            let l1 = [], r1 = [];
-            for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
-                let cellLeft = state.excelRawDataV1[rowIdx]?.[8];
-                let cellRight = state.excelRawDataV1[rowIdx]?.[9];
-
-                l1.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V1[rowIdx]);
-                r1.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V1[rowIdx + 6]);
-            }
-            state.currentMoneyLayoutV1 = l1.concat(r1);
-        }
-
-        function updateMoneyLayoutV2ByCheck() {
-            if (!state.excelRawDataV2 || state.excelRawDataV2.length === 0) return;
-
-            let l2 = [], r2 = [];
-            const startRow = state.isSo5Checked ? 9 : 0;
-
-            for (let i = 0; i <= 5; i++) {
-                let currentRowIdx = startRow + i;
-                let cellLeft = state.excelRawDataV2[currentRowIdx]?.[8];
-                let cellRight = state.excelRawDataV2[currentRowIdx]?.[9];
-
-                l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
-                r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
-            }
-            state.currentMoneyLayoutV2 = l2.concat(r2);
-        }
-
         function toggleSo5(isChecked) {
             state.isSo5Checked = isChecked;
+            state.currentMoneyLayoutV2 = isChecked ? [...TABLE2_V2] : [...TABLE1_V2];
             state.lastAction = 'toggleSo5';
-            updateMoneyLayoutV2ByCheck();
             loadRoundData();
             sendUpdate();
         }
@@ -1268,6 +1490,12 @@
             };
         }
 
+        function parseIsCorrect(val) {
+            if (!val) return true;
+            let s = String(val).trim().toLowerCase();
+            return s === 'đúng' || s === 'đ' || s === 'true' || s === '1' || s === 'd' || s === 'right' || s === 'yes';
+        }
+
         function handleExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1279,60 +1507,49 @@
                 state.round1TopicsData = [];
                 state.round2TopicsData = [];
 
-                let l1 = [], r1 = [];
-                let l2 = [], r2 = [];
+                // Gắn cứng bảng tiền
+                state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
+                state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
 
-                const fV1 = workbook.SheetNames.find(n => n.trim() === "Vòng 1") || workbook.SheetNames[0];
+                const sheetNames = workbook.SheetNames;
+
+                // Tìm sheet Vòng 1
+                const fV1 = sheetNames.find(n => n.trim().toLowerCase().includes("vòng 1") || n.trim().toLowerCase().includes("vong 1") || n.trim().toLowerCase() === "round 1") || sheetNames[0];
                 if (fV1) {
                     const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
                     if (jsonV1.length > 0) {
-                        state.excelRawDataV1 = jsonV1;
+                        for (let qIdx = 0; qIdx < jsonV1.length; qIdx++) {
+                            const row = jsonV1[qIdx];
+                            if (!row || !row[0]) continue;
+                            const topicText = String(row[0]).trim();
+                            if (topicText === "" || topicText.toLowerCase().includes("chủ đề") || topicText.toLowerCase() === "stt" || topicText.toLowerCase() === "topic") continue;
 
-                        for (let rowIdx = 0; rowIdx <= 5; rowIdx++) {
-                            let cellLeft = jsonV1[rowIdx]?.[8];
-                            let cellRight = jsonV1[rowIdx]?.[9];
-
-                            l1.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V1[rowIdx]);
-                            r1.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V1[rowIdx + 6]);
-                        }
-                        state.currentMoneyLayoutV1 = l1.concat(r1);
-
-                        for (let qIdx = 1; qIdx < jsonV1.length; qIdx++) {
-                            if (!jsonV1[qIdx] || !jsonV1[qIdx][0] || String(jsonV1[qIdx][0]).trim() === "" || String(jsonV1[qIdx][0]).trim() === "Chủ đề") continue;
                             state.round1TopicsData.push({
-                                topic: String(jsonV1[qIdx][0]).trim(),
-                                A: { text: jsonV1[qIdx][1] || "Trống", correct: String(jsonV1[qIdx][4]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][4]).trim() },
-                                B: { text: jsonV1[qIdx][2] || "Trống", correct: String(jsonV1[qIdx][5]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][5]).trim() },
-                                C: { text: jsonV1[qIdx][3] || "Trống", correct: String(jsonV1[qIdx][6]).trim().toLowerCase() === 'đúng', excelAnsRaw: String(jsonV1[qIdx][6]).trim() }
+                                topic: topicText,
+                                A: { text: row[1] !== undefined ? String(row[1]).trim() : "Trống", correct: parseIsCorrect(row[4]), excelAnsRaw: String(row[4] || '').trim() },
+                                B: { text: row[2] !== undefined ? String(row[2]).trim() : "Trống", correct: parseIsCorrect(row[5]), excelAnsRaw: String(row[5] || '').trim() },
+                                C: { text: row[3] !== undefined ? String(row[3]).trim() : "Trống", correct: parseIsCorrect(row[6]), excelAnsRaw: String(row[6] || '').trim() }
                             });
                         }
                     }
                 }
 
-                const fV2 = workbook.SheetNames.find(n => n.trim() === "Vòng 2");
+                // Tìm sheet Vòng 2
+                const fV2 = sheetNames.find(n => n.trim().toLowerCase().includes("vòng 2") || n.trim().toLowerCase().includes("vong 2") || n.trim().toLowerCase() === "round 2") || (sheetNames.length > 1 ? sheetNames[1] : null);
                 if (fV2) {
                     const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
                     if (jsonV2.length > 0) {
-                        state.excelRawDataV2 = jsonV2;
-                        const startRow = state.isSo5Checked ? 9 : 0;
+                        for (let qIdx = 0; qIdx < jsonV2.length; qIdx++) {
+                            const row = jsonV2[qIdx];
+                            if (!row || !row[0]) continue;
+                            const topicText = String(row[0]).trim();
+                            if (topicText === "" || topicText.toLowerCase().includes("chủ đề") || topicText.toLowerCase() === "stt" || topicText.toLowerCase() === "topic") continue;
 
-                        for (let i = 0; i <= 5; i++) {
-                            let currentRowIdx = startRow + i;
-                            let cellLeft = jsonV2[currentRowIdx]?.[8];
-                            let cellRight = jsonV2[currentRowIdx]?.[9];
-
-                            l2.push(cellLeft !== undefined && String(cellLeft).trim() !== "" ? String(cellLeft).trim() : DEFAULT_LAYOUT_V2[i]);
-                            r2.push(cellRight !== undefined && String(cellRight).trim() !== "" ? String(cellRight).trim() : DEFAULT_LAYOUT_V2[i + 6]);
-                        }
-                        state.currentMoneyLayoutV2 = l2.concat(r2);
-
-                        for (let qIdx = 1; qIdx < jsonV2.length; qIdx++) {
-                            if (!jsonV2[qIdx] || !jsonV2[qIdx][0] || String(jsonV2[qIdx][0]).trim() === "" || String(jsonV2[qIdx][0]).trim() === "Chủ đề") continue;
                             state.round2TopicsData.push({
-                                topic: String(jsonV2[qIdx][0]).trim(),
-                                A: { text: jsonV2[qIdx][1] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][4]).trim() },
-                                B: { text: jsonV2[qIdx][2] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][5]).trim() },
-                                C: { text: jsonV2[qIdx][3] || "Trống", correct: true, excelAnsRaw: String(jsonV2[qIdx][6]).trim() }
+                                topic: topicText,
+                                A: { text: row[1] !== undefined ? String(row[1]).trim() : "Trống", correct: true, excelAnsRaw: String(row[4] || '').trim() },
+                                B: { text: row[2] !== undefined ? String(row[2]).trim() : "Trống", correct: true, excelAnsRaw: String(row[5] || '').trim() },
+                                C: { text: row[3] !== undefined ? String(row[3]).trim() : "Trống", correct: true, excelAnsRaw: String(row[6] || '').trim() }
                             });
                         }
                     }
@@ -1348,7 +1565,7 @@
                 sendUpdate();
 
                 const successMsg = `NẠP ĐỀ THÀNH CÔNG!\n- Vòng 1: ${state.round1TopicsData.length} chủ đề.\n- Vòng 2: ${state.round2TopicsData.length} chủ đề.`;
-                socket.emit('trigger-popup', successMsg);
+                sendPopup(successMsg);
                 showControllerAlert(successMsg);
                 event.target.value = '';
             };
@@ -1373,28 +1590,6 @@
                 document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
             }
         });
-
-        function disableDevTools() {
-            document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            document.addEventListener('keydown', (e) => {
-                if (
-                    e.key === 'F12' ||
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
-                    (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
-                ) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
-
-            setInterval(() => {
-                console.clear();
-            }, 1000);
-        }
-
-        window.addEventListener('DOMContentLoaded', disableDevTools);
     </script>
 </body>
 

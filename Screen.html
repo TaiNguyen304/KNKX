@@ -10,7 +10,6 @@
             font-weight: bold !important;
             user-select: none;
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif !important;
         }
 
         body {
@@ -23,7 +22,7 @@
             background-image: url('bg1.png');
             background-size: cover;
             background-position: center;
-            font-family: 'Segoe UI', sans-serif !important;
+            font-family: Arial, sans-serif;
         }
 
         .game-board {
@@ -294,6 +293,7 @@
             transform: scaleX(0);
             transform-origin: left center;
             border-radius: 12px;
+            border: 3px solid #ffd700;
             overflow-y: auto;
         }
 
@@ -316,6 +316,14 @@
             border-radius: 6px;
             display: block;
             margin: 6px auto;
+        }
+
+        .game-board.round-2-mode .question-content img {
+            max-width: 80%;
+            max-height: 136px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
 
         .answer-buttons {
@@ -402,6 +410,7 @@
             transform: scaleX(0);
             transform-origin: center;
             border-radius: 10px;
+            border: 3px solid #ffd700;
             padding: 8px;
         }
 
@@ -614,19 +623,24 @@
                 if (
                     e.keyCode === 123 ||
                     (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
-                    (e.ctrlKey && e.keyCode === 85)
+                    (e.ctrlKey && e.keyCode === 85) ||
+                    (e.ctrlKey && e.keyCode === 83)
                 ) {
                     e.preventDefault();
                     return false;
                 }
             });
-            setInterval(function () {
-                const startTime = performance.now();
-                debugger;
-                if (performance.now() - startTime > 100) {
-                    window.location.reload();
+            const checkDevTools = function () {
+                const threshold = 160;
+                const widthDiff = window.outerWidth - window.innerWidth > threshold;
+                const heightDiff = window.outerHeight - window.innerHeight > threshold;
+                if (widthDiff || heightDiff) {
+                    document.body.innerHTML = '<div style="background:#000;color:#ff3333;height:100vh;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:Arial,sans-serif;font-weight:bold;">ĐÃ CẤM MỞ DEVTOOLS</div>';
+                    setTimeout(() => { window.location.reload(); }, 1000);
                 }
-            }, 1000);
+            };
+            window.addEventListener('resize', checkDevTools);
+            setInterval(checkDevTools, 800);
         }
         disableDevTools();
 

@@ -601,9 +601,34 @@
     </div>
 
     <script>
+        function disableDevTools() {
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            });
+            document.addEventListener('keydown', function (e) {
+                if (
+                    e.keyCode === 123 ||
+                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+                    (e.ctrlKey && e.keyCode === 85)
+                ) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            setInterval(function () {
+                const startTime = performance.now();
+                debugger;
+                if (performance.now() - startTime > 100) {
+                    window.location.reload();
+                }
+            }, 1000);
+        }
+        disableDevTools();
+
         const socket = io();
 
-        // --- Client Crypto System ---
+        // --- Client Crypto System (RSA-OAEP SHA-256 + AES-GCM) ---
         let clientKeyPair = null;
         let serverPublicKeyObj = null;
 
@@ -657,54 +682,6 @@
             );
         }
 
-        async function encryptDataForServer(dataObj) {
-            if (!serverPublicKeyObj) return dataObj;
-            try {
-                const rawAesKey = window.crypto.getRandomValues(new Uint8Array(32));
-                const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                const jsonStr = JSON.stringify(dataObj);
-                const encText = new TextEncoder().encode(jsonStr);
-
-                const aesKey = await window.crypto.subtle.importKey(
-                    "raw",
-                    rawAesKey,
-                    { name: "AES-GCM" },
-                    false,
-                    ["encrypt"]
-                );
-
-                const cipherBuffer = await window.crypto.subtle.encrypt(
-                    { name: "AES-GCM", iv: iv },
-                    aesKey,
-                    encText
-                );
-
-                const cipherArray = new Uint8Array(cipherBuffer);
-                const tagLength = 16;
-                const dataBytes = cipherArray.slice(0, cipherArray.length - tagLength);
-                const tagBytes = cipherArray.slice(cipherArray.length - tagLength);
-
-                const ciphertextBase64 = arrayBufferToBase64(dataBytes.buffer);
-                const tagBase64 = arrayBufferToBase64(tagBytes.buffer);
-                const fullCiphertext = ciphertextBase64 + ':' + tagBase64;
-
-                const encryptedKeyBuf = await window.crypto.subtle.encrypt(
-                    { name: "RSA-OAEP" },
-                    serverPublicKeyObj,
-                    rawAesKey.buffer
-                );
-
-                return {
-                    k: arrayBufferToBase64(encryptedKeyBuf),
-                    i: arrayBufferToBase64(iv.buffer),
-                    d: fullCiphertext
-                };
-            } catch (err) {
-                console.error("Client encryption error:", err);
-                return dataObj;
-            }
-        }
-
         async function decryptDataFromServer(pkg) {
             if (!pkg || typeof pkg !== 'object' || !pkg.k || !pkg.i || !pkg.d || !clientKeyPair) {
                 return pkg;
@@ -752,6 +729,7 @@
         socket.on('connect', async () => {
             const jwk = await initClientCrypto();
             socket.emit('register-client-key', { jwk });
+            socket.emit('register-role', { role: 'screen' });
         });
 
         socket.on('init-handshake', async (data) => {
@@ -811,11 +789,6 @@
                     audioCache[soundName].currentTime = 0;
                 }
             });
-        });
-
-        socket.on('display-popup', async (rawPayload) => {
-            const msg = await decryptDataFromServer(rawPayload);
-            if (msg) alert(msg);
         });
 
         let wasHiddenBefore = true;
@@ -894,9 +867,11 @@
             const state = await decryptDataFromServer(rawPayload);
             if (!state) return;
 
-            // 1. MHC Overlay
+            // 1. MHC overlay
             const mhc = document.getElementById('mhcOverlay');
-            if (mhc) mhc.style.display = (state.showMHC === undefined || state.showMHC === true) ? 'flex' : 'none';
+            if (mhc) {
+                mhc.style.display = (state.showMHC === false) ? 'none' : 'flex';
+            }
 
             // 2. Class Board
             const board = document.getElementById('gameBoard');
@@ -925,7 +900,6 @@
             if (hasAnimationTrigger && !isAnimatingMoney) {
                 isAnimatingMoney = true;
                 const currentAnimType = state.lastAction;
-                encryptDataForServer({}).then(enc => socket.emit('consume-action', enc));
 
                 const soundName = currentAnimType === 'moneyAnim_increase' ? 'value_increase.mp3' : 'value_decrease.mp3';
                 if (audioCache[soundName]) {

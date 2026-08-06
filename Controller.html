@@ -692,6 +692,7 @@
         </div>
     </div>
 
+    <!-- POPUP NHẬP ĐÁP ÁN V2 -->
     <div class="input-popup-overlay" id="inputPopupOverlay">
         <div class="input-popup-box">
             <h3 id="popupTitle" style="margin:0;">Nhập Đáp Án</h3>
@@ -710,11 +711,11 @@
         </div>
     </div>
 
+    <!-- POPUP XÁC NHẬN RESET -->
     <div class="input-popup-overlay" id="confirmResetOverlay">
         <div class="input-popup-box" style="border: 2px solid #ff00cc;">
             <h3 style="margin:0; color: #ff00cc;">XÁC NHẬN RESET</h3>
-            <p style="font-size: 14px; margin: 15px 0;">Bạn có chắc chắn muốn RESET toàn bộ điểm số, khôi phục các ô
-                tiền và ký tự dấu đã bị ẩn không?</p>
+            <p style="font-size: 14px; margin: 15px 0;">Bạn có chắc chắn muốn RESET toàn bộ điểm số, khôi phục các ô tiền và ký tự dấu đã bị ẩn không?</p>
             <div class="popup-actions">
                 <button class="btn" style="background:green;" onclick="executeGameReset()">ĐỒNG Ý</button>
                 <button class="btn" style="background:red;"
@@ -723,11 +724,11 @@
         </div>
     </div>
 
+    <!-- THÔNG BÁO TỰ NỔI TRÊN CONTROLLER -->
     <div class="input-popup-overlay" id="controllerAlertOverlay">
         <div class="input-popup-box" style="border: 2px solid #39ff14; width: 340px;">
             <h3 style="margin:0; color: red;">THÔNG BÁO</h3>
-            <p id="controllerAlertMessage" style="font-size: 15px; margin: 15px 0; white-space: pre-line; color: #000;">
-            </p>
+            <p id="controllerAlertMessage" style="font-size: 15px; margin: 15px 0; white-space: pre-line; color: #000;"></p>
             <div class="popup-actions">
                 <button class="btn" style="background:red; max-width: 120px;"
                     onclick="document.getElementById('controllerAlertOverlay').style.display='none'">ĐÓNG</button>
@@ -736,9 +737,34 @@
     </div>
 
     <script>
+        function disableDevTools() {
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            });
+            document.addEventListener('keydown', function (e) {
+                if (
+                    e.keyCode === 123 ||
+                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+                    (e.ctrlKey && e.keyCode === 85)
+                ) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            setInterval(function () {
+                const startTime = performance.now();
+                debugger;
+                if (performance.now() - startTime > 100) {
+                    window.location.reload();
+                }
+            }, 1000);
+        }
+        disableDevTools();
+
         const socket = io();
 
-        // --- Client Crypto System ---
+        // --- Client Crypto System (RSA-OAEP SHA-256 + AES-GCM) ---
         let clientKeyPair = null;
         let serverPublicKeyObj = null;
 
@@ -887,6 +913,7 @@
         socket.on('connect', async () => {
             const jwk = await initClientCrypto();
             socket.emit('register-client-key', { jwk });
+            socket.emit('register-role', { role: 'controller', key: 'KNKX_ADMIN_SECRET_2026' });
         });
 
         socket.on('init-handshake', async (data) => {
@@ -896,12 +923,7 @@
             }
         });
 
-        socket.on('display-popup', async (rawPayload) => {
-            const msg = await decryptDataFromServer(rawPayload);
-            if (msg) showControllerAlert(msg);
-        });
-
-        // Gắn cứng bảng tiền theo yêu cầu
+        // Constants
         const HARDCODED_LAYOUT_V1 = ["0 $A", "500 $A", "500 $A", "750 $A", "750 $A", "750 $A", "1.000 $A", "1.000 $A", "1.000 $A", "1.500 $A", "2.500 $A", "5.000 $A"];
         const TABLE1_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "3", "4"];
         const TABLE2_V2 = ["1", "1", "1", "2", "2", "2", "2", "3", "3", "3", "4", "5"];
@@ -928,7 +950,8 @@
             currentRoundIndexR1: 0,
             currentRoundIndexR2: 0,
             showMHC: true,
-            lastAction: ''
+            lastAction: '',
+            moneyAnimationChecked: false
         };
 
         let isFirstTopicLoad = true;
@@ -941,9 +964,11 @@
             const enc = await encryptDataForServer({ sound: 'stop_all' });
             socket.emit('trigger-sound', enc);
         }
-        async function sendPopup(msg) {
-            const enc = await encryptDataForServer(msg);
-            socket.emit('trigger-popup', enc);
+
+        function controlMHC(show) {
+            state.showMHC = show;
+            state.lastAction = show ? 'showMHC' : 'hideMHC';
+            sendUpdate();
         }
 
         function setSideSign(signImg) {
@@ -970,6 +995,19 @@
             sendUpdate();
         }
 
+        function toggleSo5(checked) {
+            state.isSo5Checked = checked;
+            if (state.currentActiveRound === 2) {
+                state.currentMoneyLayoutV2 = checked ? [...TABLE2_V2] : [...TABLE1_V2];
+            }
+            sendUpdate();
+        }
+
+        function toggleMoneyAnim(checked) {
+            state.moneyAnimationChecked = checked;
+            sendUpdate();
+        }
+
         async function sendUpdate() {
             renderMoneyGrid();
             renderSymbolsRow();
@@ -981,7 +1019,6 @@
             }
         }
 
-        // Hàm hỗ trợ đọc Imgur / Media link trong câu hỏi
         function parseMediaContent(rawText) {
             if (!rawText) return { text: '', mediaType: null, mediaUrl: '' };
             let str = String(rawText).trim();
@@ -1049,20 +1086,13 @@
             el.innerHTML = html;
         }
 
-        socket.on('sync-full-state', (serverState) => {
+        socket.on('sync-full-state', async (rawPayload) => {
+            const serverState = await decryptDataFromServer(rawPayload);
+            if (!serverState) return;
             state = serverState;
 
             if (!state.currentRoundData) {
-                let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
-                let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
-
-                if (targetList && targetList.length > 0 && targetIdx < targetList.length) {
-                    const round = targetList[targetIdx];
-                    state.currentRoundData = {
-                        topic: round.topic.toUpperCase(),
-                        A: round.A, B: round.B, C: round.C
-                    };
-                }
+                loadRoundData();
             }
 
             const chkSo5 = document.getElementById('chkSo5');
@@ -1076,6 +1106,19 @@
             renderSymbolsRow();
             updateUI();
         });
+
+        function loadRoundData() {
+            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
+            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
+
+            if (targetList && targetList.length > 0 && targetIdx < targetList.length) {
+                const round = targetList[targetIdx];
+                state.currentRoundData = {
+                    topic: round.topic.toUpperCase(),
+                    A: round.A, B: round.B, C: round.C
+                };
+            }
+        }
 
         function updateUI() {
             const board = document.getElementById('gameBoard');
@@ -1350,7 +1393,7 @@
             document.getElementById('inputPopupOverlay').style.display = 'none';
             state.lastAction = 'savePopup';
             sendUpdate();
-            socket.emit('trigger-popup', `Đã lưu đáp án câu ${state.activeQuestion}!`);
+            showControllerAlert(`Đã lưu đáp án cho câu ${state.activeQuestion}!`);
         }
 
         function revealR2AnswerGraphic() {
@@ -1457,139 +1500,193 @@
                 document.getElementById('txtTotalPrize').value = '0';
             }
 
-            sendPopup("HỆ THỐNG ĐÃ RESET VỀ TRẠNG THÁI BAN ĐẦU!");
-            showControllerAlert("Hệ thống đã được đặt lại thành công!");
+            showControllerAlert("Hệ thống đã được RESET!");
         }
 
-        function triggerExcelInput() { document.getElementById('excelInput').click(); }
-
-        function toggleSo5(isChecked) {
-            state.isSo5Checked = isChecked;
-            state.currentMoneyLayoutV2 = isChecked ? [...TABLE2_V2] : [...TABLE1_V2];
-            state.lastAction = 'toggleSo5';
-            loadRoundData();
-            sendUpdate();
+        function triggerExcelInput() {
+            document.getElementById('excelInput').click();
         }
 
-        function loadRoundData() {
-            if (!state) return;
-            let targetList = (state.currentActiveRound === 1) ? state.round1TopicsData : state.round2TopicsData;
-            let targetIdx = (state.currentActiveRound === 1) ? state.currentRoundIndexR1 : state.currentRoundIndexR2;
-
-            if (!targetList || targetList.length === 0 || targetIdx >= targetList.length) {
-                state.currentRoundData = null;
-                return;
-            }
-
-            const round = targetList[targetIdx];
-            state.currentRoundData = {
-                topic: round.topic.toUpperCase(),
-                A: round.A,
-                B: round.B,
-                C: round.C
-            };
-        }
-
-        function parseIsCorrect(val) {
-            if (!val) return true;
-            let s = String(val).trim().toLowerCase();
-            return s === 'đúng' || s === 'đ' || s === 'true' || s === '1' || s === 'd' || s === 'right' || s === 'yes';
-        }
-
-        function handleExcel(event) {
-            const file = event.target.files[0];
+        // --- HÀM XỬ LÝ NHẬP ĐỀ EXCEL (CẢ 2 VÒNG TRONG CÙNG 1 SHEET EXCEL) ---
+        function handleExcel(e) {
+            const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+            reader.onload = function (evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                state.round1TopicsData = [];
-                state.round2TopicsData = [];
+                    let r1List = [];
+                    let r2List = [];
+                    let currentParsingRound = 0;
+                    let lastTopicName = '';
+                    let currentTopicObj = null;
 
-                // Gắn cứng bảng tiền
-                state.currentMoneyLayoutV1 = [...HARDCODED_LAYOUT_V1];
-                state.currentMoneyLayoutV2 = state.isSo5Checked ? [...TABLE2_V2] : [...TABLE1_V2];
+                    for (let i = 0; i < json.length; i++) {
+                        const row = json[i];
+                        if (!row || row.length === 0) continue;
 
-                const sheetNames = workbook.SheetNames;
+                        const rowStr = row.map(cell => String(cell || '').trim()).join(" ").toUpperCase();
 
-                // Tìm sheet Vòng 1
-                const fV1 = sheetNames.find(n => n.trim().toLowerCase().includes("vòng 1") || n.trim().toLowerCase().includes("vong 1") || n.trim().toLowerCase() === "round 1") || sheetNames[0];
-                if (fV1) {
-                    const jsonV1 = XLSX.utils.sheet_to_json(workbook.Sheets[fV1], { header: 1, defval: "" });
-                    if (jsonV1.length > 0) {
-                        for (let qIdx = 0; qIdx < jsonV1.length; qIdx++) {
-                            const row = jsonV1[qIdx];
-                            if (!row || !row[0]) continue;
-                            const topicText = String(row[0]).trim();
-                            if (topicText === "" || topicText.toLowerCase().includes("chủ đề") || topicText.toLowerCase() === "stt" || topicText.toLowerCase() === "topic") continue;
+                        // Detect Section Header for Vòng 1 & Vòng 2
+                        if (rowStr.includes("VÒNG 1") || rowStr.includes("VONG 1")) {
+                            currentParsingRound = 1;
+                            currentTopicObj = null;
+                            lastTopicName = '';
+                            continue;
+                        } else if (rowStr.includes("VÒNG 2") || rowStr.includes("VONG 2")) {
+                            currentParsingRound = 2;
+                            currentTopicObj = null;
+                            lastTopicName = '';
+                            continue;
+                        }
 
-                            state.round1TopicsData.push({
-                                topic: topicText,
-                                A: { text: row[1] !== undefined ? String(row[1]).trim() : "Trống", correct: parseIsCorrect(row[4]), excelAnsRaw: String(row[4] || '').trim() },
-                                B: { text: row[2] !== undefined ? String(row[2]).trim() : "Trống", correct: parseIsCorrect(row[5]), excelAnsRaw: String(row[5] || '').trim() },
-                                C: { text: row[3] !== undefined ? String(row[3]).trim() : "Trống", correct: parseIsCorrect(row[6]), excelAnsRaw: String(row[6] || '').trim() }
-                            });
+                        if (currentParsingRound === 0) currentParsingRound = 1;
+
+                        // Columns in Excel:
+                        // Col A (0): Nº
+                        // Col B (1): Chủ đề
+                        // Col C (2): # (A, B, C)
+                        // Col D (3): Câu hỏi
+                        // Col E (4): Đáp án (Vòng 1: Đúng/Sai, Vòng 2: Đáp án CHÍNH)
+                        // Col F (5): Đáp án KHÁC [Vòng 2] / Giải thích [Vòng 1]
+                        // Col G (6): Hình ảnh [Vòng 2]
+                        let colB_topic = String(row[1] || '').trim();
+                        let colC_hash = String(row[2] || '').trim().toUpperCase();
+                        let colD_q = String(row[3] || '').trim();
+
+                        // Skip header rows like "CHỦ ĐỀ", "CÂU HỎI", "#"
+                        if (colB_topic.toUpperCase().includes('CHỦ ĐỀ') || colD_q.toUpperCase().includes('CÂU HỎI') || colC_hash === '#') {
+                            continue;
+                        }
+
+                        let choiceKey = '';
+                        if (['A', 'B', 'C'].includes(colC_hash)) {
+                            choiceKey = colC_hash;
+                        } else {
+                            // Find A, B, C in first 4 columns if needed
+                            for (let c = 0; c < Math.min(row.length, 4); c++) {
+                                let val = String(row[c] || '').trim().toUpperCase();
+                                if (['A', 'B', 'C'].includes(val)) {
+                                    choiceKey = val;
+                                    if (c < 3 && String(row[c + 1] || '').trim().length > 0) {
+                                        colD_q = String(row[c + 1] || '').trim();
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Also check old 1-row format where Col A = "Chủ đề..."
+                        let col0 = String(row[0] || '').trim();
+                        if (!choiceKey && (col0.toLowerCase().startsWith('chủ đề') || col0.toLowerCase().startsWith('chu de'))) {
+                            let topicName = col0;
+                            let rItem = {
+                                topic: topicName.toUpperCase(),
+                                A: { text: String(row[1] || '').trim(), correct: true, excelAnsRaw: '' },
+                                B: { text: String(row[2] || '').trim(), correct: true, excelAnsRaw: '' },
+                                C: { text: String(row[3] || '').trim(), correct: true, excelAnsRaw: '' }
+                            };
+
+                            if (currentParsingRound === 1) {
+                                rItem.A.correct = String(row[4] || '').trim().toUpperCase() !== 'SAI';
+                                rItem.B.correct = String(row[5] || '').trim().toUpperCase() !== 'SAI';
+                                rItem.C.correct = String(row[6] || '').trim().toUpperCase() !== 'SAI';
+                                r1List.push(rItem);
+                            } else {
+                                rItem.A.excelAnsRaw = String(row[4] || '').trim();
+                                rItem.B.excelAnsRaw = String(row[5] || '').trim();
+                                rItem.C.excelAnsRaw = String(row[6] || '').trim();
+                                r2List.push(rItem);
+                            }
+                            continue;
+                        }
+
+                        if (!choiceKey) continue;
+
+                        if (colB_topic && !colB_topic.toUpperCase().includes('CHỦ ĐỀ')) {
+                            lastTopicName = colB_topic;
+                        }
+
+                        let topicName = lastTopicName || 'CHỦ ĐỀ ' + (currentParsingRound === 1 ? r1List.length + 1 : r2List.length + 1);
+
+                        // If Choice 'A', or new topic name, or no topic object created yet, start new Topic
+                        if (choiceKey === 'A' || !currentTopicObj || (colB_topic && colB_topic !== currentTopicObj.topic && choiceKey === 'A')) {
+                            currentTopicObj = {
+                                topic: topicName.toUpperCase(),
+                                A: { text: '', correct: true, excelAnsRaw: '' },
+                                B: { text: '', correct: true, excelAnsRaw: '' },
+                                C: { text: '', correct: true, excelAnsRaw: '' }
+                            };
+
+                            if (currentParsingRound === 1) {
+                                r1List.push(currentTopicObj);
+                            } else {
+                                r2List.push(currentTopicObj);
+                            }
+                        }
+
+                        let qText = colD_q;
+
+                        if (currentParsingRound === 1) {
+                            let ansVal = String(row[4] || '').trim();
+                            let isCorrect = (ansVal.toUpperCase() !== 'SAI' && ansVal.toUpperCase() !== 'FALSE');
+
+                            let mediaUrl = String(row[5] || row[6] || '').trim();
+                            if (mediaUrl.startsWith('http')) {
+                                qText += ' ' + mediaUrl;
+                            }
+
+                            currentTopicObj[choiceKey] = {
+                                text: qText,
+                                correct: isCorrect,
+                                excelAnsRaw: ansVal || (isCorrect ? 'Đúng' : 'Sai')
+                            };
+                        } else {
+                            let mainAns = String(row[4] || '').trim();
+                            let altAns = String(row[5] || '').trim();
+                            let imgUrl = String(row[6] || '').trim();
+
+                            if (imgUrl.startsWith('http')) {
+                                qText += ' ' + imgUrl;
+                            } else if (altAns.startsWith('http')) {
+                                qText += ' ' + altAns;
+                                altAns = '';
+                            }
+
+                            let fullAns = mainAns;
+                            if (altAns) fullAns += ' / ' + altAns;
+
+                            currentTopicObj[choiceKey] = {
+                                text: qText,
+                                correct: true,
+                                excelAnsRaw: fullAns
+                            };
                         }
                     }
+
+                    if (r1List.length > 0) state.round1TopicsData = r1List;
+                    if (r2List.length > 0) state.round2TopicsData = r2List;
+
+                    state.currentRoundIndexR1 = 0;
+                    state.currentRoundIndexR2 = 0;
+                    isFirstTopicLoad = true;
+                    loadRoundData();
+                    sendUpdate();
+
+                    showControllerAlert(`Nhập đề Excel thành công!\n- Vòng 1: ${r1List.length} chủ đề.\n- Vòng 2: ${r2List.length} chủ đề.`);
+                } catch (err) {
+                    console.error(err);
+                    showControllerAlert("Lỗi cấu trúc file Excel! Vui lòng kiểm tra lại định dạng file.");
                 }
-
-                // Tìm sheet Vòng 2
-                const fV2 = sheetNames.find(n => n.trim().toLowerCase().includes("vòng 2") || n.trim().toLowerCase().includes("vong 2") || n.trim().toLowerCase() === "round 2") || (sheetNames.length > 1 ? sheetNames[1] : null);
-                if (fV2) {
-                    const jsonV2 = XLSX.utils.sheet_to_json(workbook.Sheets[fV2], { header: 1, defval: "" });
-                    if (jsonV2.length > 0) {
-                        for (let qIdx = 0; qIdx < jsonV2.length; qIdx++) {
-                            const row = jsonV2[qIdx];
-                            if (!row || !row[0]) continue;
-                            const topicText = String(row[0]).trim();
-                            if (topicText === "" || topicText.toLowerCase().includes("chủ đề") || topicText.toLowerCase() === "stt" || topicText.toLowerCase() === "topic") continue;
-
-                            state.round2TopicsData.push({
-                                topic: topicText,
-                                A: { text: row[1] !== undefined ? String(row[1]).trim() : "Trống", correct: true, excelAnsRaw: String(row[4] || '').trim() },
-                                B: { text: row[2] !== undefined ? String(row[2]).trim() : "Trống", correct: true, excelAnsRaw: String(row[5] || '').trim() },
-                                C: { text: row[3] !== undefined ? String(row[3]).trim() : "Trống", correct: true, excelAnsRaw: String(row[6] || '').trim() }
-                            });
-                        }
-                    }
-                }
-
-                state.currentRoundIndexR1 = 0;
-                state.currentRoundIndexR2 = 0;
-                state.displayClasses = ['hide-money'];
-                state.lastAction = 'loadExcel';
-
-                isFirstTopicLoad = true;
-                loadRoundData();
-                sendUpdate();
-
-                const successMsg = `NẠP ĐỀ THÀNH CÔNG!\n- Vòng 1: ${state.round1TopicsData.length} chủ đề.\n- Vòng 2: ${state.round2TopicsData.length} chủ đề.`;
-                sendPopup(successMsg);
-                showControllerAlert(successMsg);
-                event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
-
-        function controlMHC(status) {
-            state.showMHC = status;
-            state.lastAction = 'mhc';
-            sendUpdate();
-        }
-
-        function toggleMoneyAnim(checked) {
-            state.moneyAnimationChecked = checked;
-            state.lastAction = 'toggleAnim';
-            sendUpdate();
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            sendUpdate();
-            if (document.getElementById('txtTotalPrize')) {
-                document.getElementById('txtTotalPrize').value = formatNumberWithDots(state.globalTotalPrize);
-            }
-        });
     </script>
 </body>
 

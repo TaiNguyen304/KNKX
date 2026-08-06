@@ -19,11 +19,10 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            background-color: #000040;
             background-image: url('bg1.png');
             background-size: cover;
             background-position: center;
-            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
         }
 
         .game-board {
@@ -68,13 +67,13 @@
         .main-prize {
             position: relative;
             z-index: 2;
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 85px;
             display: flex;
             justify-content: center;
             align-items: center;
+            text-align: center;
             color: #000;
             font-size: 42px;
             box-sizing: border-box;
@@ -105,7 +104,6 @@
         }
 
         .symbol-box {
-            background-color: #e0e0e0;
             background-image: url('SymbolStrap.png');
             background-size: 100% 100%;
             flex: 1;
@@ -113,6 +111,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            text-align: center;
             font-size: 36px;
             color: #000;
             border-radius: 6px;
@@ -123,12 +122,10 @@
         }
 
         .symbol-box.selected {
-            background-color: #ff9900;
             background-image: url('SymbolChooseStrap.png') !important;
         }
 
         .symbol-box.closed {
-            background-color: #555;
             background-image: url('SymbolCloseStrap.png') !important;
             color: transparent !important;
         }
@@ -150,25 +147,23 @@
         }
 
         .money-box {
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             height: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
+            text-align: center;
             color: #000;
             font-size: 26px;
             border-radius: 6px;
         }
 
         .money-box.selected {
-            background-color: #ff9900;
             background-image: url('ChooseStrap.png') !important;
         }
 
         .money-box.closed {
-            background-color: #555;
             background-image: url('CloseStrap.png') !important;
             color: transparent !important;
         }
@@ -179,7 +174,6 @@
 
         .topic-container {
             display: none;
-            background-color: #ffd700;
             background-image: url('YellowStrap.png');
             background-size: 100% 100%;
             width: 660px;
@@ -199,6 +193,14 @@
             font-size: 28px;
             opacity: 0;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0 10px;
+            line-height: 1;
         }
 
         .choices-column {
@@ -212,7 +214,6 @@
         }
 
         .choice-box {
-            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 75px;
@@ -226,7 +227,6 @@
         }
 
         .choice-box.used {
-            background-color: #888;
             background-image: url('bbb.png') !important;
         }
 
@@ -234,6 +234,14 @@
             color: #000;
             font-size: 44px;
             opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            line-height: 1;
         }
 
         .game-board.show-topic .topic-container {
@@ -277,7 +285,6 @@
         .question-box {
             width: 100%;
             height: 100%;
-            background-color: #ffffff;
             background-size: 100% 100%;
             display: flex;
             align-items: center;
@@ -327,7 +334,6 @@
         }
 
         .ans-btn {
-            background-color: #fff;
             background-image: url('sss.png');
             background-size: 100% 100%;
             width: 100px;
@@ -335,31 +341,30 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            text-align: center;
             color: #000;
             font-size: 24px;
             border-radius: 8px;
         }
 
         .ans-btn.chosen {
-            background-color: #333;
             background-image: url('true false choose strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.correct-final {
-            background-color: #00aa00;
             background-image: url('truefalseright strap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.wrong-final {
-            background-color: #cc0000;
             background-image: url('truefalsewrongstrap.png') !important;
             color: #fff !important;
         }
 
         .ans-btn.hidden-ans {
             opacity: 0 !important;
+            pointer-events: none;
         }
 
         .game-board.show-question .question-area {
@@ -752,7 +757,7 @@
         document.addEventListener('click', unlockAudio);
         document.addEventListener('keydown', unlockAudio);
 
-        const SHORT_SOUNDS = ['reveal_amount.mp3', 'round_start.mp3', 'theme_short.mp3', 'ding.mp3', 'value_increase.mp3', 'value_decrease.mp3'];
+        const SHORT_SOUNDS = ['reveal_amount.mp3', 'round_start.mp3', 'theme_short.mp3', 'ding.mp3', 'value_increase.mp3', 'value_decrease.mp3', 'correct.mp3', 'wrong.mp3'];
         const audioCache = {};
         let currentBackgroundMusic = null;
 

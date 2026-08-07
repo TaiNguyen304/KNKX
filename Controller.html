@@ -1524,7 +1524,7 @@
             document.getElementById('excelInput').click();
         }
 
-        // --- HÀM XỬ LÝ NHẬP ĐỀ EXCEL ĐÃ ĐƯỢC CẢI TIẾN & SỬA LỖI HOÀN HẢO ---
+        // --- HÀM XỬ LÝ NHẬP ĐỀ EXCEL ĐÃ ĐƯỢC CHUẨN HÓA HOÀN HẢO ---
         function handleExcel(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -1541,10 +1541,20 @@
                     let r1List = [];
                     let r2List = [];
                     let currentParsingRound = 0; // 1: Vòng 1, 2: Vòng 2
-                    let lastTopicName = '';
                     let currentTopicObj = null;
+                    let lastTopicName = '';
 
-                    // Bỏ dấu tiếng Việt phục vụ so sánh chuỗi chính xác 100%
+                    // Vị trí cột mặc định (sẽ tự động cập nhật lại khi phát hiện dòng tiêu đề cột)
+                    let colIndices = {
+                        topic: 1,      // Cột "Chủ đề" (mặc định B)
+                        hash: 2,       // Cột "#" (mặc định C)
+                        question: 3,   // Cột "Câu hỏi" (mặc định D)
+                        ansMain: 4,    // Cột "Đáp án" / "Đáp án CHÍNH" (mặc định E)
+                        ansAlt: 5,     // Cột "Đáp án KHÁC" (mặc định F)
+                        img: 6,        // Cột "Hình ảnh" (mặc định G)
+                        explain: 7     // Cột "Giải thích" (mặc định H hoặc G)
+                    };
+
                     function removeAccents(str) {
                         return String(str || '')
                             .normalize("NFD")
@@ -1557,83 +1567,108 @@
                         const row = json[i];
                         if (!row || row.length === 0) continue;
 
-                        const rawRowStr = row.map(cell => String(cell || '').trim()).join(" ");
-                        const unaccentedRowStr = removeAccents(rawRowStr).toUpperCase();
-                        const compactStr = unaccentedRowStr.replace(/\s+/g, "");
+                        const unaccentedRowCells = row.map(c => removeAccents(String(c || '')).trim().toUpperCase());
 
-                        // 1. Nhận diện Tiêu đề Vòng (Vòng 1 / Vòng 2)
-                        const isVong2Header = (compactStr.includes("VONG2") || compactStr.includes("ROUND2") || compactStr.includes("VONGII")) && !compactStr.includes("CAUHOI");
-                        const isVong1Header = (compactStr.includes("VONG1") || compactStr.includes("ROUND1") || compactStr.includes("VONGI")) && !compactStr.includes("VONG2") && !compactStr.includes("CAUHOI");
+                        // 1. KIỂM TRA DÒNG BANNER VÒNG (VÒNG 1 / VÒNG 2)
+                        let isV1Banner = false;
+                        let isV2Banner = false;
 
-                        if (isVong2Header) {
+                        for (let cellStr of unaccentedRowCells) {
+                            if (!cellStr) continue;
+                            if (/\bVONG\s*2\b|\bROUND\s*2\b|\bVONG\s*II\b/.test(cellStr)) {
+                                isV2Banner = true;
+                                break;
+                            }
+                            if (/\bVONG\s*1\b|\bROUND\s*1\b|\bVONG\s*I\b/.test(cellStr)) {
+                                isV1Banner = true;
+                                break;
+                            }
+                        }
+
+                        if (isV2Banner) {
                             currentParsingRound = 2;
                             currentTopicObj = null;
                             lastTopicName = '';
                             continue;
-                        } else if (isVong1Header) {
+                        } else if (isV1Banner) {
                             currentParsingRound = 1;
                             currentTopicObj = null;
                             lastTopicName = '';
                             continue;
                         }
 
+                        // 2. KIỂM TRA DÒNG TIÊU ĐỀ CỘT ("Chủ đề", "Câu hỏi", "Đáp án", "Giải thích"...)
+                        const isHeaderRow = unaccentedRowCells.some(c => c.includes("CHU DE")) &&
+                                            unaccentedRowCells.some(c => c.includes("CAU HOI"));
+
+                        if (isHeaderRow) {
+                            // Cập nhật vị trí cột động dựa trên tên cột thực tế trong file Excel
+                            unaccentedRowCells.forEach((cellText, idx) => {
+                                if (cellText.includes("CHU DE")) colIndices.topic = idx;
+                                else if (cellText === "#" || cellText.includes("STT") || cellText.includes("NO")) colIndices.hash = idx;
+                                else if (cellText.includes("CAU HOI")) colIndices.question = idx;
+                                else if (cellText.includes("DAP AN CHINH") || cellText === "DAP AN") colIndices.ansMain = idx;
+                                else if (cellText.includes("DAP AN KHAC")) colIndices.ansAlt = idx;
+                                else if (cellText.includes("HINH ANH") || cellText.includes("IMAGE")) colIndices.img = idx;
+                                else if (cellText.includes("GIAI THICH") || cellText.includes("GHI CHU")) colIndices.explain = idx;
+                            });
+                            continue; // Bỏ qua dòng tiêu đề cột
+                        }
+
+                        // Mặc định là Vòng 1 nếu chưa gặp banner nào
                         if (currentParsingRound === 0) {
                             currentParsingRound = 1;
                         }
 
-                        // 2. Bỏ qua các dòng tiêu đề cột
-                        if (unaccentedRowStr.includes("CHU DE") && unaccentedRowStr.includes("CAU HOI")) continue;
-                        if (unaccentedRowStr.includes("DAP AN CHINH") || unaccentedRowStr.includes("DAP AN KHAC")) continue;
-
-                        let colB_topic = String(row[1] || '').trim().normalize("NFC");
-                        let colC_hash = String(row[2] || '').trim().toUpperCase();
-                        let colD_q = String(row[3] || '').trim().normalize("NFC");
-
-                        let unaccentedColB = removeAccents(colB_topic).toUpperCase();
-                        let unaccentedColD = removeAccents(colD_q).toUpperCase();
-
-                        if (unaccentedColB.includes('CHU DE') || unaccentedColD.includes('CAU HOI') || colC_hash === '#') {
-                            continue;
-                        }
-
-                        // Tìm ký tự A, B, C
+                        // 3. XÁC ĐỊNH LOẠI CÂU HỎI (A, B, C)
+                        let hashVal = unaccentedRowCells[colIndices.hash] || '';
                         let choiceKey = '';
-                        if (['A', 'B', 'C'].includes(colC_hash)) {
-                            choiceKey = colC_hash;
+
+                        if (['A', 'B', 'C'].includes(hashVal)) {
+                            choiceKey = hashVal;
                         } else {
-                            for (let c = 0; c < Math.min(row.length, 4); c++) {
-                                let val = String(row[c] || '').trim().toUpperCase();
+                            // Quét các cột đầu tiên để tìm ký tự A, B, C nếu cột # bị lệch vị trí
+                            for (let c = 0; c < Math.min(row.length, 5); c++) {
+                                let val = unaccentedRowCells[c];
                                 if (['A', 'B', 'C'].includes(val)) {
                                     choiceKey = val;
-                                    if (c < 3 && String(row[c + 1] || '').trim().length > 0) {
-                                        colD_q = String(row[c + 1] || '').trim().normalize("NFC");
-                                    }
                                     break;
                                 }
                             }
                         }
 
+                        // Nếu không phải câu hỏi (A, B, C) -> bỏ qua
                         if (!choiceKey) continue;
 
-                        // 3. Khống chế giới hạn tối đa 7 chủ đề mỗi vòng
+                        // 4. LẤY DỮ LIỆU TỪ CÁC CỘT THEO VỊ TRÍ ĐÃ DÒ TÌM ĐỘNG
+                        let rawTopic = String(row[colIndices.topic] || '').trim().normalize("NFC");
+                        let rawQ = String(row[colIndices.question] || '').trim().normalize("NFC");
+                        let rawAnsMain = String(row[colIndices.ansMain] || '').trim().normalize("NFC");
+                        let rawAnsAlt = String(row[colIndices.ansAlt] || '').trim().normalize("NFC");
+                        let rawImg = String(row[colIndices.img] || '').trim();
+                        let rawExplain = String(row[colIndices.explain] || '').trim().normalize("NFC");
+
+                        // Cập nhật lastTopicName nếu có tên chủ đề mới
+                        let cleanTopicUpper = removeAccents(rawTopic).toUpperCase();
+                        if (rawTopic && !cleanTopicUpper.includes("CHU DE")) {
+                            lastTopicName = rawTopic;
+                        }
+
                         let targetList = (currentParsingRound === 1) ? r1List : r2List;
 
+                        // Bỏ qua nếu đã đủ 7 chủ đề và gặp câu A mới
                         if (targetList.length >= 7 && (choiceKey === 'A' || !currentTopicObj)) {
                             continue;
                         }
 
-                        if (colB_topic && !removeAccents(colB_topic).toUpperCase().includes('CHU DE')) {
-                            lastTopicName = colB_topic;
-                        }
-
-                        let topicName = lastTopicName || ('CHỦ ĐỀ ' + (targetList.length + 1));
+                        let topicTitle = lastTopicName || ('CHỦ ĐỀ ' + (targetList.length + 1));
 
                         // Bắt đầu Topic mới khi gặp câu A
-                        if (choiceKey === 'A' || !currentTopicObj || (colB_topic && colB_topic.toUpperCase() !== (currentTopicObj.topic || '').toUpperCase() && choiceKey === 'A')) {
+                        if (choiceKey === 'A' || !currentTopicObj || (rawTopic && rawTopic.toUpperCase() !== (currentTopicObj.topic || '').toUpperCase() && choiceKey === 'A')) {
                             if (targetList.length >= 7) continue;
 
                             currentTopicObj = {
-                                topic: topicName.toUpperCase(),
+                                topic: topicTitle.toUpperCase(),
                                 A: { text: '', correct: true, excelAnsRaw: '' },
                                 B: { text: '', correct: true, excelAnsRaw: '' },
                                 C: { text: '', correct: true, excelAnsRaw: '' }
@@ -1642,55 +1677,54 @@
                             targetList.push(currentTopicObj);
                         }
 
-                        if (targetList.indexOf(currentTopicObj) < 0 || targetList.indexOf(currentTopicObj) >= 7) {
+                        if (!currentTopicObj || targetList.indexOf(currentTopicObj) < 0 || targetList.indexOf(currentTopicObj) >= 7) {
                             continue;
                         }
 
-                        let qText = colD_q;
+                        // 5. LƯU CÂU HỎI & ĐÁP ÁN CHÍNH XÁC THEO TỪNG VÒNG
+                        let qText = rawQ;
 
                         if (currentParsingRound === 1) {
-                            let ansVal = String(row[4] || '').trim().normalize("NFC");
-                            let unaccentedAns = removeAccents(ansVal).toUpperCase();
+                            // Vòng 1: Đáp án là Đúng / Sai
+                            let unaccentedAns = removeAccents(rawAnsMain).toUpperCase();
                             let isCorrect = (unaccentedAns !== 'SAI' && unaccentedAns !== 'FALSE');
 
-                            let mediaUrl = String(row[5] || row[6] || '').trim();
-                            if (mediaUrl.startsWith('http')) {
-                                qText += ' ' + mediaUrl;
+                            if (rawImg.startsWith('http')) {
+                                qText += ' ' + rawImg;
                             }
 
-                            if (currentTopicObj && currentTopicObj[choiceKey]) {
-                                currentTopicObj[choiceKey] = {
-                                    text: qText,
-                                    correct: isCorrect,
-                                    excelAnsRaw: ansVal || (isCorrect ? 'Đúng' : 'Sai')
-                                };
+                            let displayAnsStr = rawAnsMain || (isCorrect ? 'Đúng' : 'Sai');
+                            if (rawExplain) {
+                                displayAnsStr += ' (' + rawExplain + ')';
                             }
+
+                            currentTopicObj[choiceKey] = {
+                                text: qText,
+                                correct: isCorrect,
+                                excelAnsRaw: displayAnsStr
+                            };
                         } else {
-                            let mainAns = String(row[4] || '').trim().normalize("NFC");
-                            let altAns = String(row[5] || '').trim().normalize("NFC");
-                            let imgUrl = String(row[6] || '').trim();
-
-                            if (imgUrl.startsWith('http')) {
-                                qText += ' ' + imgUrl;
-                            } else if (altAns.startsWith('http')) {
-                                qText += ' ' + altAns;
-                                altAns = '';
+                            // Vòng 2: Đáp án chính, Đáp án khác, Hình ảnh, Giải thích
+                            if (rawImg.startsWith('http')) {
+                                qText += ' ' + rawImg;
+                            } else if (rawAnsAlt.startsWith('http')) {
+                                qText += ' ' + rawAnsAlt;
+                                rawAnsAlt = '';
                             }
 
-                            let fullAns = mainAns;
-                            if (altAns) fullAns += ' / ' + altAns;
+                            let fullAns = rawAnsMain;
+                            if (rawAnsAlt) fullAns += ' / ' + rawAnsAlt;
+                            if (rawExplain) fullAns += ' (Giải thích: ' + rawExplain + ')';
 
-                            if (currentTopicObj && currentTopicObj[choiceKey]) {
-                                currentTopicObj[choiceKey] = {
-                                    text: qText,
-                                    correct: true,
-                                    excelAnsRaw: fullAns
-                                };
-                            }
+                            currentTopicObj[choiceKey] = {
+                                text: qText,
+                                correct: true,
+                                excelAnsRaw: fullAns
+                            };
                         }
                     }
 
-                    // Giới hạn cứng chỉ lấy tối đa 7 chủ đề cho mỗi vòng
+                    // Giới hạn tối đa 7 chủ đề cho mỗi vòng
                     r1List = r1List.slice(0, 7);
                     r2List = r2List.slice(0, 7);
 

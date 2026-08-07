@@ -8,7 +8,7 @@ import { Server as SocketIOServer } from 'socket.io';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 const CONTROLLER_SECRET_KEY = "KNKX_ADMIN_SECRET_2026";
 
 const app = express();
@@ -28,13 +28,9 @@ const serverKeyPair = crypto.generateKeyPairSync('rsa', {
 // Map to store client public key JWKs by socket ID
 const clientPublicKeys = new Map();
 
-/**
- * Encrypts a payload for a specific client socket using RSA-OAEP (SHA-256) + AES-256-GCM.
- * When inspected via F12 Network -> Socket -> Messages, frame contains ONLY random base64 ciphertext!
- */
 function encryptForClientSocket(dataObj, socketId) {
     const clientJwk = clientPublicKeys.get(socketId);
-    if (!clientJwk) return dataObj; // fallback if key not registered yet
+    if (!clientJwk) return dataObj;
 
     try {
         const jsonStr = JSON.stringify(dataObj);
@@ -53,7 +49,6 @@ function encryptForClientSocket(dataObj, socketId) {
             format: 'jwk'
         });
 
-        // RSA-OAEP encryption with SHA-256 hash
         const encryptedAesKey = crypto.publicEncrypt({
             key: clientPublicKey,
             padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
@@ -71,9 +66,6 @@ function encryptForClientSocket(dataObj, socketId) {
     }
 }
 
-/**
- * Decrypts encrypted payload received from a client using Server's RSA Private Key (SHA-256).
- */
 function decryptFromClient(pkg) {
     if (!pkg || typeof pkg !== 'object' || !pkg.k || !pkg.i || !pkg.d) return pkg;
     try {
@@ -146,11 +138,6 @@ let gameState = {
     lastAction: ''
 };
 
-/**
- * Encrypts and sanitizes gameState before broadcasting to Screen clients.
- * ANY hidden data, raw excel data, full topic datasets, and secret answers
- * are ALWAYS replaced with a single "🐧" symbol.
- */
 function sanitizeStateForScreen(state) {
     if (!state) return state;
 
@@ -219,7 +206,6 @@ function broadcastState() {
 io.on('connection', (socket) => {
     socket.join('screen');
 
-    // Send Server RSA Public Key for Handshake
     socket.emit('init-handshake', {
         jwk: {
             kty: serverKeyPair.publicKey.kty,
@@ -275,8 +261,6 @@ io.on('connection', (socket) => {
 
         if (updatedState.round1TopicsData === "🐧") delete updatedState.round1TopicsData;
         if (updatedState.round2TopicsData === "🐧") delete updatedState.round2TopicsData;
-        if (updatedState.excelRawDataV1 === "🐧") delete updatedState.excelRawDataV1;
-        if (updatedState.excelRawDataV2 === "🐧") delete updatedState.excelRawDataV2;
 
         gameState = { ...gameState, ...updatedState };
         broadcastState();
@@ -308,5 +292,5 @@ app.get('/', (_req, res) => {
 app.use(express.static(__dirname));
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server Node.js thuần đang chạy tại port: ${PORT}`);
+    console.log(`Server NodeJS running on port ${PORT}`);
 });

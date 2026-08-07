@@ -622,36 +622,6 @@
     </div>
 
     <script>
-        function disableDevTools() {
-            document.addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-                return false;
-            });
-            document.addEventListener('keydown', function (e) {
-                if (
-                    e.keyCode === 123 ||
-                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
-                    (e.ctrlKey && e.keyCode === 85) ||
-                    (e.ctrlKey && e.keyCode === 83)
-                ) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-            const checkDevTools = function () {
-                const threshold = 160;
-                const widthDiff = window.outerWidth - window.innerWidth > threshold;
-                const heightDiff = window.outerHeight - window.innerHeight > threshold;
-                if (widthDiff || heightDiff) {
-                    document.body.innerHTML = '<div style="background:#000;color:#ff3333;height:100vh;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:Arial,sans-serif;font-weight:bold;">ĐÃ CẤM MỞ DEVTOOLS</div>';
-                    setTimeout(() => { window.location.reload(); }, 1000);
-                }
-            };
-            window.addEventListener('resize', checkDevTools);
-            setInterval(checkDevTools, 800);
-        }
-        disableDevTools();
-
         const socket = io();
 
         // --- Client Crypto System (RSA-OAEP SHA-256 + AES-GCM) ---

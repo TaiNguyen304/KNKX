@@ -12,7 +12,7 @@
             box-sizing: border-box;
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
-            font-family: 'Segoe UI',sans-serif !important;
+            font-family: 'Segoe UI', sans-serif !important;
         }
 
         ::-webkit-scrollbar {
@@ -291,7 +291,8 @@
             width: 100%;
         }
 
-        .question-content img, .question-content video {
+        .question-content img,
+        .question-content video {
             max-width: 100%;
             max-height: 110px;
             object-fit: contain;
@@ -393,7 +394,8 @@
             justify-content: center;
         }
 
-        .round2-answer-text img, .round2-answer-text video {
+        .round2-answer-text img,
+        .round2-answer-text video {
             max-width: 100%;
             max-height: 50px;
             object-fit: contain;
@@ -636,7 +638,8 @@
             </div>
 
             <div class="controls-row">
-                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
+                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG
+                    1</button>
                 <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
                 <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
             </div>
@@ -668,7 +671,8 @@
                 <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
             </div>
 
-            <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <div
+                style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2); border-radius: 6px;">
                 <label style="font-size: 18px; color: #39ff14; cursor: pointer; display: flex; align-items: center;">
                     <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
                         style="transform: scale(1.5); margin-right: 12px; cursor: pointer;">
@@ -742,7 +746,8 @@
     <div class="input-popup-overlay" id="confirmResetOverlay">
         <div class="input-popup-box" style="border: 2px solid #ff00cc;">
             <h3 style="margin:0; color: #ff00cc;">XÁC NHẬN RESET</h3>
-            <p style="font-size: 14px; margin: 15px 0;">Bạn có chắc chắn muốn RESET toàn bộ điểm số, khôi phục các ô tiền và ký tự dấu đã bị ẩn không?</p>
+            <p style="font-size: 14px; margin: 15px 0;">Bạn có chắc chắn muốn RESET toàn bộ điểm số, khôi phục các ô
+                tiền và ký tự dấu đã bị ẩn không?</p>
             <div class="popup-actions">
                 <button class="btn" style="background:green;" onclick="executeGameReset()">ĐỒNG Ý</button>
                 <button class="btn" style="background:red;"
@@ -755,7 +760,8 @@
     <div class="input-popup-overlay" id="controllerAlertOverlay">
         <div class="input-popup-box" style="border: 2px solid #39ff14; width: 340px;">
             <h3 style="margin:0; color: red;">THÔNG BÁO</h3>
-            <p id="controllerAlertMessage" style="font-size: 15px; margin: 15px 0; white-space: pre-line; color: #000;"></p>
+            <p id="controllerAlertMessage" style="font-size: 15px; margin: 15px 0; white-space: pre-line; color: #000;">
+            </p>
             <div class="popup-actions">
                 <button class="btn" style="background:red; max-width: 120px;"
                     onclick="document.getElementById('controllerAlertOverlay').style.display='none'">ĐÓNG</button>
@@ -1056,17 +1062,17 @@
             let str = String(rawText).trim();
             const urlRegex = /(https?:\/\/[^\s]+)/gi;
             const matches = str.match(urlRegex);
-            
+
             if (!matches || matches.length === 0) {
                 return { text: str, mediaType: null, mediaUrl: '' };
             }
-            
+
             let rawUrl = matches[0];
             let cleanText = str.replace(rawUrl, '').trim();
             let lowerUrl = rawUrl.toLowerCase();
             let mediaType = null;
             let mediaUrl = rawUrl;
-            
+
             if (lowerUrl.includes('imgur.com') && lowerUrl.endsWith('.gifv')) {
                 mediaUrl = rawUrl.replace(/\.gifv$/i, '.mp4');
                 mediaType = 'video';
@@ -1087,7 +1093,7 @@
             } else {
                 mediaType = 'image';
             }
-            
+
             return {
                 text: cleanText,
                 mediaType: mediaType,
@@ -1566,7 +1572,9 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    // raw: false để lấy giá trị chuỗi đẹp (tránh mất số 0 hoặc định dạng)
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
                     let r1List = [];
                     let r2List = [];
@@ -1574,13 +1582,23 @@
                     let lastTopicName = '';
                     let currentTopicObj = null;
 
+                    // Hàm ép kiểu chuỗi an toàn
+                    const safeStr = (val) => String(val ?? '').trim();
+
+                    // Hàm tìm và trích xuất link URL (HTTP/HTTPS/WWW)
+                    const extractUrl = (val) => {
+                        const str = safeStr(val);
+                        const match = str.match(/(https?:\/\/[^\s]+|www\.[^\s]+)/i);
+                        return match ? match[0] : '';
+                    };
+
                     for (let i = 0; i < json.length; i++) {
                         const row = json[i];
                         if (!row || row.length === 0) continue;
 
-                        const rowStr = row.map(cell => String(cell || '').trim()).join(" ").toUpperCase();
+                        const rowStr = row.map(cell => safeStr(cell)).join(" ").toUpperCase();
 
-                        // Detect Section Header for Vòng 1 & Vòng 2
+                        // Nhận diện Section Header Vòng 1 & Vòng 2
                         if (rowStr.includes("VÒNG 1") || rowStr.includes("VONG 1")) {
                             currentParsingRound = 1;
                             currentTopicObj = null;
@@ -1595,19 +1613,12 @@
 
                         if (currentParsingRound === 0) currentParsingRound = 1;
 
-                        // Columns in Excel:
-                        // Col A (0): Nº
-                        // Col B (1): Chủ đề
-                        // Col C (2): # (A, B, C)
-                        // Col D (3): Câu hỏi
-                        // Col E (4): Đáp án (Vòng 1: Đúng/Sai, Vòng 2: Đáp án CHÍNH)
-                        // Col F (5): Đáp án KHÁC [Vòng 2] / Giải thích [Vòng 1]
-                        // Col G (6): Hình ảnh [Vòng 2]
-                        let colB_topic = String(row[1] || '').trim();
-                        let colC_hash = String(row[2] || '').trim().toUpperCase();
-                        let colD_q = String(row[3] || '').trim();
+                        // Đọc các cột chuẩn
+                        let colB_topic = safeStr(row[1]);
+                        let colC_hash = safeStr(row[2]).toUpperCase();
+                        let colD_q = safeStr(row[3]);
 
-                        // Skip header rows like "CHỦ ĐỀ", "CÂU HỎI", "#"
+                        // Bỏ qua dòng tiêu đề
                         if (colB_topic.toUpperCase().includes('CHỦ ĐỀ') || colD_q.toUpperCase().includes('CÂU HỎI') || colC_hash === '#') {
                             continue;
                         }
@@ -1616,39 +1627,38 @@
                         if (['A', 'B', 'C'].includes(colC_hash)) {
                             choiceKey = colC_hash;
                         } else {
-                            // Find A, B, C in first 4 columns if needed
                             for (let c = 0; c < Math.min(row.length, 4); c++) {
-                                let val = String(row[c] || '').trim().toUpperCase();
+                                let val = safeStr(row[c]).toUpperCase();
                                 if (['A', 'B', 'C'].includes(val)) {
                                     choiceKey = val;
-                                    if (c < 3 && String(row[c + 1] || '').trim().length > 0) {
-                                        colD_q = String(row[c + 1] || '').trim();
+                                    if (c < 3 && safeStr(row[c + 1]).length > 0) {
+                                        colD_q = safeStr(row[c + 1]);
                                     }
                                     break;
                                 }
                             }
                         }
 
-                        // Also check old 1-row format where Col A = "Chủ đề..."
-                        let col0 = String(row[0] || '').trim();
+                        // Format 1 dòng cũ (Nếu có)
+                        let col0 = safeStr(row[0]);
                         if (!choiceKey && (col0.toLowerCase().startsWith('chủ đề') || col0.toLowerCase().startsWith('chu de'))) {
                             let topicName = col0;
                             let rItem = {
                                 topic: topicName.toUpperCase(),
-                                A: { text: String(row[1] || '').trim(), correct: true, excelAnsRaw: '' },
-                                B: { text: String(row[2] || '').trim(), correct: true, excelAnsRaw: '' },
-                                C: { text: String(row[3] || '').trim(), correct: true, excelAnsRaw: '' }
+                                A: { text: safeStr(row[1]), correct: true, excelAnsRaw: '' },
+                                B: { text: safeStr(row[2]), correct: true, excelAnsRaw: '' },
+                                C: { text: safeStr(row[3]), correct: true, excelAnsRaw: '' }
                             };
 
                             if (currentParsingRound === 1) {
-                                rItem.A.correct = String(row[4] || '').trim().toUpperCase() !== 'SAI';
-                                rItem.B.correct = String(row[5] || '').trim().toUpperCase() !== 'SAI';
-                                rItem.C.correct = String(row[6] || '').trim().toUpperCase() !== 'SAI';
+                                rItem.A.correct = safeStr(row[4]).toUpperCase() !== 'SAI';
+                                rItem.B.correct = safeStr(row[5]).toUpperCase() !== 'SAI';
+                                rItem.C.correct = safeStr(row[6]).toUpperCase() !== 'SAI';
                                 r1List.push(rItem);
                             } else {
-                                rItem.A.excelAnsRaw = String(row[4] || '').trim();
-                                rItem.B.excelAnsRaw = String(row[5] || '').trim();
-                                rItem.C.excelAnsRaw = String(row[6] || '').trim();
+                                rItem.A.excelAnsRaw = safeStr(row[4]);
+                                rItem.B.excelAnsRaw = safeStr(row[5]);
+                                rItem.C.excelAnsRaw = safeStr(row[6]);
                                 r2List.push(rItem);
                             }
                             continue;
@@ -1662,7 +1672,6 @@
 
                         let topicName = lastTopicName || 'CHỦ ĐỀ ' + (currentParsingRound === 1 ? r1List.length + 1 : r2List.length + 1);
 
-                        // If Choice 'A', or new topic name, or no topic object created yet, start new Topic
                         if (choiceKey === 'A' || !currentTopicObj || (colB_topic && colB_topic !== currentTopicObj.topic && choiceKey === 'A')) {
                             currentTopicObj = {
                                 topic: topicName.toUpperCase(),
@@ -1680,13 +1689,17 @@
 
                         let qText = colD_q;
 
+                        // QUÉT BẮT LINK HÌNH ẢNH (Ưu tiên cột G/index 6, sau đó tới cột F/index 5)
+                        let imgUrl = extractUrl(row[6]) || extractUrl(row[5]);
+
+                        // XỬ LÝ THEO VÒNG
                         if (currentParsingRound === 1) {
-                            let ansVal = String(row[4] || '').trim();
+                            let ansVal = safeStr(row[4]);
                             let isCorrect = (ansVal.toUpperCase() !== 'SAI' && ansVal.toUpperCase() !== 'FALSE');
 
-                            let mediaUrl = String(row[5] || row[6] || '').trim();
-                            if (mediaUrl.startsWith('http')) {
-                                qText += ' ' + mediaUrl;
+                            // Nối link ảnh vào câu hỏi nếu có
+                            if (imgUrl) {
+                                qText += ' ' + imgUrl;
                             }
 
                             currentTopicObj[choiceKey] = {
@@ -1695,15 +1708,18 @@
                                 excelAnsRaw: ansVal || (isCorrect ? 'Đúng' : 'Sai')
                             };
                         } else {
-                            let mainAns = String(row[4] || '').trim();
-                            let altAns = String(row[5] || '').trim();
-                            let imgUrl = String(row[6] || '').trim();
+                            // VÒNG 2
+                            let mainAns = safeStr(row[4]);
+                            let altAns = safeStr(row[5]);
 
-                            if (imgUrl.startsWith('http')) {
-                                qText += ' ' + imgUrl;
-                            } else if (altAns.startsWith('http')) {
-                                qText += ' ' + altAns;
+                            // Nếu cột F lỡ chứa URL thay vì đáp án phụ, làm sạch altAns
+                            if (extractUrl(altAns)) {
                                 altAns = '';
+                            }
+
+                            // Nối link ảnh ở cột G vào nội dung câu hỏi
+                            if (imgUrl) {
+                                qText += ' ' + imgUrl;
                             }
 
                             let fullAns = mainAns;

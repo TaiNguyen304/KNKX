@@ -470,6 +470,12 @@
             background-color: red;
         }
 
+        .btn-restore {
+            background-color: rgb(0, 128, 0) !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+        }
+
         .btn-excel {
             background-color: purple;
         }
@@ -571,151 +577,178 @@
 <body>
     <div class="main-title">BẢNG ĐIỀU KHIỂN (CONTROLLER) - KHẮC NHẬP KHẮC XUẤT</div>
 
-    <div class="controller-main-row">
-        <!-- Cluster 1: Game Board Preview -->
-        <div class="game-board hide-money" id="gameBoard">
-            <div class="prize-container" id="prizeContainer">
-                <img src="daucong.png" id="leftSignImg" class="sign-img">
-                <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
-                <img src="daucong.png" id="rightSignImg" class="sign-img">
-            </div>
-            <div class="symbols-row" id="symbolsRow"></div>
+    <div class="view-switcher" style="display: flex; gap: 15px; margin-bottom: 15px; justify-content: center;">
+        <button class="view-nav-btn" id="btnView1" onclick="switchControllerView(1)" style="padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #39ff14; background: #39ff14; color: #000; cursor: pointer; transition: all 0.2s ease;">VIEW 1: ĐIỀU KHIỂN GAME</button>
+        <button class="view-nav-btn" id="btnView2" onclick="switchControllerView(2)" style="padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #00ffff; background: rgba(0,0,0,0.5); color: #00ffff; cursor: pointer; transition: all 0.2s ease;">VIEW 2: QUẢN LÝ ĐỀ THI</button>
+    </div>
 
-            <div class="bottom-area">
-                <div class="money-grid" id="moneyGrid"></div>
-                <div class="topic-container" id="topicContainer">
-                    <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
+    <!-- VIEW 1: ĐIỀU KHIỂN GAME -->
+    <div id="view1Container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="controller-main-row">
+            <!-- Cluster 1: Game Board Preview -->
+            <div class="game-board hide-money" id="gameBoard">
+                <div class="prize-container" id="prizeContainer">
+                    <img src="daucong.png" id="leftSignImg" class="sign-img">
+                    <div class="main-prize" id="totalPrize" onclick="calculateFromSelection()">0 $A</div>
+                    <img src="daucong.png" id="rightSignImg" class="sign-img">
                 </div>
-                <div class="choices-column" id="choicesColumn">
-                    <div class="choice-box" id="choiceA">
-                        <div class="choice-text">A</div>
+                <div class="symbols-row" id="symbolsRow"></div>
+
+                <div class="bottom-area">
+                    <div class="money-grid" id="moneyGrid"></div>
+                    <div class="topic-container" id="topicContainer">
+                        <div class="topic-text" id="topicText">TỪ CHỦ ĐỀ 1</div>
                     </div>
-                    <div class="choice-box" id="choiceB">
-                        <div class="choice-text">B</div>
+                    <div class="choices-column" id="choicesColumn">
+                        <div class="choice-box" id="choiceA">
+                            <div class="choice-text">A</div>
+                        </div>
+                        <div class="choice-box" id="choiceB">
+                            <div class="choice-text">B</div>
+                        </div>
+                        <div class="choice-box" id="choiceC">
+                            <div class="choice-text">C</div>
+                        </div>
                     </div>
-                    <div class="choice-box" id="choiceC">
-                        <div class="choice-text">C</div>
+                    <div class="question-area" id="questionArea">
+                        <div class="question-box" id="questionBox">
+                            <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
+                        </div>
+                        <div class="answer-buttons" id="answerButtons">
+                            <div class="ans-btn" id="trueBtn">ĐÚNG</div>
+                            <div class="ans-btn" id="falseBtn">SAI</div>
+                        </div>
+                    </div>
+                    <div class="round2-answer-container" id="round2AnswerContainer">
+                        <div class="round2-answer-box" id="round2AnswerBox">
+                            <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
+                        </div>
                     </div>
                 </div>
-                <div class="question-area" id="questionArea">
-                    <div class="question-box" id="questionBox">
-                        <div class="question-content" id="questionContent">Nội dung câu hỏi...</div>
-                    </div>
-                    <div class="answer-buttons" id="answerButtons">
-                        <div class="ans-btn" id="trueBtn">ĐÚNG</div>
-                        <div class="ans-btn" id="falseBtn">SAI</div>
+            </div>
+
+            <!-- Cluster 2: Controls Panel -->
+            <div class="controls-panel">
+                <div class="controls-row" style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+                    <button class="btn btn-round-toggle" onclick="controlMHC(true)">HIỆN MHC</button>
+                    <button class="btn btn-round-toggle" onclick="controlMHC(false)">ẨN MHC</button>
+                    <button class="btn btn-money-ctrl" onclick="moneyGridControl('show')">HIỆN BẢNG TIỀN</button>
+                    <button class="btn btn-money-ctrl" onclick="moneyGridControl('hide')">ẨN BẢNG TIỀN</button>
+                    <button class="btn btn-money-ctrl" onclick="moneyGridControl('reset')">RESET BẢNG TIỀN</button>
+                    <div id="v2PrizeSetter" style="display: none; margin-left: 5px;">
+                        <input type="text" id="txtTotalPrize" class="set-prize-input" placeholder="Set tiền tổng..."
+                            oninput="handlePrizeInput(this)">
                     </div>
                 </div>
-                <div class="round2-answer-container" id="round2AnswerContainer">
-                    <div class="round2-answer-box" id="round2AnswerBox">
-                        <div class="round2-answer-text" id="round2AnswerText">ĐÁP ÁN</div>
-                    </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-sign" onclick="setSideSign('daucong.png')">Hiện dấu cộng</button>
+                    <button class="btn btn-sign" onclick="setSideSign('dautru.png')">Hiện dấu trừ</button>
+                    <button class="btn btn-sign" onclick="setSideSign('daunhan.png')">Hiện dấu nhân</button>
+                    <button class="btn btn-sign" onclick="setSideSign('dauchia.png')">Hiện dấu chia</button>
+                </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
+                    <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
+                    <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
+                </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
+                    <button class="btn btn-view" onclick="showABCMenu()">HIỆN A, B, C</button>
+                    <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
+                    <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
+                    <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
+                        onchange="handleExcel(event)">
+                </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
+                    <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
+                    <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
+                </div>
+
+                <div class="controls-row" id="r1ActionRow">
+                    <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
+                    <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
+                    <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
+                </div>
+
+                <div class="controls-row" id="r2ActionRow" style="display:none;">
+                    <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
+                    <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
+                    <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
+                </div>
+
+                <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                    <label style="font-size: 18px; color: #39ff14; cursor: pointer; display: flex; align-items: center;">
+                        <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
+                            style="transform: scale(1.5); margin-right: 12px; cursor: pointer;">
+                        Số 5 (Chuyển Bảng 2 Vòng 2)
+                    </label>
+                </div>
+
+                <div style="margin: 5px 0;">
+                    <label style="color: #00ffff; font-size: 16px; cursor: pointer; display: flex; align-items: center;">
+                        <input type="checkbox" id="chkMoneyAnim" onchange="toggleMoneyAnim(this.checked)"
+                            style="transform: scale(1.3); margin-right: 8px; cursor: pointer;"> Animation Tiền
+                    </label>
+                </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
+                    <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
+                    <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
+                </div>
+
+                <div class="controls-row">
+                    <button class="btn btn-restore" onclick="restoreChoice('A')">KHÔI PHỤC CÂU A</button>
+                    <button class="btn btn-restore" onclick="restoreChoice('B')">KHÔI PHỤC CÂU B</button>
+                    <button class="btn btn-restore" onclick="restoreChoice('C')">KHÔI PHỤC CÂU C</button>
+                </div>
+            </div>
+
+            <div class="sound-panel">
+                <div class="controls-row">
+                    <button class="btn btn-sound" onclick="emitSound('choosing_dancer_bed.mp3')">Chọn số</button>
+                    <button class="btn btn-sound" onclick="emitSound('closing.mp3')">Credit</button>
+                    <button class="btn btn-sound" onclick="emitSound('contestant_win_leave.mp3')">Thắng cuộc</button>
+                    <button class="btn btn-sound" onclick="emitSound('explain_the_rules.mp3')">Giải thích luật chơi</button>
+                    <button class="btn btn-sound" onclick="emitSound('introduce_dancers.mp3')">Dancers</button>
+                    <button class="btn btn-sound" onclick="emitSound('large_winning.mp3')">Giải thưởng lớn</button>
+                    <button class="btn btn-sound" onclick="emitSound('main_theme.mp3')">Nhạc nền</button>
+                    <button class="btn btn-sound" onclick="emitSound('Opening&Host_Entrance.mp3')">Mở đầu</button>
+                    <button class="btn btn-sound" onclick="emitSound('round_1_bed.mp3')">Nhạc nền vòng 1</button>
+                    <button class="btn btn-sound" onclick="emitSound('round_2_bed.mp3')">Nhạc nền vòng 2</button>
+                    <button class="btn btn-sound" onclick="emitSound('value_increase.mp3')">Tăng điểm</button>
+                    <button class="btn btn-sound" onclick="emitSound('commercial_in.mp3')">QC</button>
+                    <button class="btn btn-sound" onclick="emitSound('commercial_out.mp3')">Hết QC</button>
+                    <button class="btn btn-sound" onclick="emitSound('contestant_lost_leave.mp3')">Thua cuộc</button>
+                    <button class="btn btn-sound" onclick="emitSound('reveal_amount.mp3')">Công bố số tiền</button>
+                    <button class="btn btn-sound" onclick="emitSound('round_start.mp3')">Bắt đầu vòng thi</button>
+                    <button class="btn btn-sound" onclick="emitSound('theme_short.mp3')">Nhạc nền ngắn</button>
+                    <button class="btn btn-sound" onclick="emitSound('value_decrease.mp3')">Giảm điểm</button>
+                    <button class="btn btn-sound" onclick="emitSound('welcome_contestant.mp3')">Chào đón người chơi</button>
+                    <button class="btn btn-sound" onclick="emitSound('pass.mp3')">Hoàn thành câu</button>
+                </div>
+                <div class="controls-row">
+                    <button class="btn btn-stop-sound" onclick="emitStopSound()">Dừng âm thanh</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Cluster 2: Controls Panel -->
-        <div class="controls-panel">
-            <div class="controls-row" style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-                <button class="btn btn-round-toggle" onclick="controlMHC(true)">HIỆN MHC</button>
-                <button class="btn btn-round-toggle" onclick="controlMHC(false)">ẨN MHC</button>
-                <button class="btn btn-money-ctrl" onclick="moneyGridControl('show')">HIỆN BẢNG TIỀN</button>
-                <button class="btn btn-money-ctrl" onclick="moneyGridControl('hide')">ẨN BẢNG TIỀN</button>
-                <button class="btn btn-money-ctrl" onclick="moneyGridControl('reset')">RESET BẢNG TIỀN</button>
-                <div id="v2PrizeSetter" style="display: none; margin-left: 5px;">
-                    <input type="text" id="txtTotalPrize" class="set-prize-input" placeholder="Set tiền tổng..."
-                        oninput="handlePrizeInput(this)">
-                </div>
-            </div>
-
-            <div class="controls-row">
-                <button class="btn btn-sign" onclick="setSideSign('daucong.png')">Hiện dấu cộng</button>
-                <button class="btn btn-sign" onclick="setSideSign('dautru.png')">Hiện dấu trừ</button>
-                <button class="btn btn-sign" onclick="setSideSign('daunhan.png')">Hiện dấu nhân</button>
-                <button class="btn btn-sign" onclick="setSideSign('dauchia.png')">Hiện dấu chia</button>
-            </div>
-
-            <div class="controls-row">
-                <button class="btn btn-round-toggle active-round" id="btnRound1" onclick="switchRound(1)">VÒNG 1</button>
-                <button class="btn btn-round-toggle" id="btnRound2" onclick="switchRound(2)">VÒNG 2</button>
-                <button class="btn btn-reset" onclick="triggerResetConfirmPopup()">RESET HỆ THỐNG</button>
-            </div>
-
-            <div class="controls-row">
-                <button class="btn btn-view" onclick="clickNextTopic()">HIỆN CHỦ ĐỀ</button>
-                <button class="btn btn-view" onclick="showABCMenu()">HIỆN A, B, C</button>
-                <button class="btn btn-close" onclick="backToMoneyGrid()">QUAY LẠI BẢNG TIỀN</button>
-                <button class="btn btn-excel" onclick="triggerExcelInput()">NHẬP ĐỀ EXCEL</button>
-                <input type="file" id="excelInput" accept=".xlsx, .xls" style="display: none;"
-                    onchange="handleExcel(event)">
-            </div>
-
-            <div class="controls-row">
-                <button class="btn btn-view" onclick="openQuestion('A')">MỞ CÂU HỎI A</button>
-                <button class="btn btn-view" onclick="openQuestion('B')">MỞ CÂU HỎI B</button>
-                <button class="btn btn-view" onclick="openQuestion('C')">MỞ CÂU HỎI C</button>
-            </div>
-
-            <div class="controls-row" id="r1ActionRow">
-                <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(true)">CHỌN ĐÚNG</button>
-                <button class="btn btn-action-yellow" onclick="selectAnswerAdmin(false)">CHỌN SAI</button>
-                <button class="btn btn-result" onclick="revealResultRound1()">BẤM KẾT QUẢ V1</button>
-            </div>
-
-            <div class="controls-row" id="r2ActionRow" style="display:none;">
-                <button class="btn btn-result" onclick="openInputPopup()">NHẬP ĐÁP ÁN V2</button>
-                <button class="btn btn-result" onclick="revealR2AnswerGraphic()">HIỆN ĐÁP ÁN V2</button>
-                <button class="btn btn-result" onclick="revealR2ResultGraphic()">BẤM KẾT QUẢ V2</button>
-            </div>
-
-            <div style="margin: 10px 0; padding: 10px; border: 1px dashed #39ff14; background: rgba(0,0,0,0.2); border-radius: 6px;">
-                <label style="font-size: 18px; color: #39ff14; cursor: pointer; display: flex; align-items: center;">
-                    <input type="checkbox" id="chkSo5" onchange="toggleSo5(this.checked)"
-                        style="transform: scale(1.5); margin-right: 12px; cursor: pointer;">
-                    Số 5 (Chuyển Bảng 2 Vòng 2)
-                </label>
-            </div>
-
-            <div style="margin: 5px 0;">
-                <label style="color: #00ffff; font-size: 16px; cursor: pointer; display: flex; align-items: center;">
-                    <input type="checkbox" id="chkMoneyAnim" onchange="toggleMoneyAnim(this.checked)"
-                        style="transform: scale(1.3); margin-right: 8px; cursor: pointer;"> Animation Tiền
-                </label>
-            </div>
-
-            <div class="controls-row">
-                <button class="btn btn-close" onclick="closeAndMarkUsed('A')">ĐÓNG & HOÀN THÀNH A</button>
-                <button class="btn btn-close" onclick="closeAndMarkUsed('B')">ĐÓNG & HOÀN THÀNH B</button>
-                <button class="btn btn-close" onclick="closeAndMarkUsed('C')">ĐÓNG & HOÀN THÀNH C</button>
-            </div>
+    <!-- VIEW 2: QUẢN LÝ ĐỀ THI -->
+    <div id="view2Container" style="display: none; width: 100%; max-width: 1400px; background: rgba(255, 255, 255, 0.08); padding: 20px; border-radius: 12px; border: 1px solid #444; flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box;">
+        <div style="font-size: 22px; color: #00ffff; font-weight: bold; text-shadow: 0 0 8px #00ffff;">QUẢN LÝ ĐỀ THI EXCEL</div>
+        <div class="view2-controls-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-view2-round" id="btnV2Round1" onclick="showView2Table(1)" style="padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #00bfff; color: #000; transition: all 0.2s;">VÒNG 1</button>
+            <button class="btn btn-view2-round" id="btnV2Round2" onclick="showView2Table(2)" style="padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ffcc00; color: #000; transition: all 0.2s;">VÒNG 2</button>
+            <button class="btn btn-view2-close" onclick="closeView2Table()" style="padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ff0055; color: #fff; transition: all 0.2s;">ĐÓNG BẢNG</button>
         </div>
-
-        <div class="sound-panel">
-            <div class="controls-row">
-                <button class="btn btn-sound" onclick="emitSound('choosing_dancer_bed.mp3')">Chọn số</button>
-                <button class="btn btn-sound" onclick="emitSound('closing.mp3')">Credit</button>
-                <button class="btn btn-sound" onclick="emitSound('contestant_win_leave.mp3')">Thắng cuộc</button>
-                <button class="btn btn-sound" onclick="emitSound('explain_the_rules.mp3')">Giải thích luật chơi</button>
-                <button class="btn btn-sound" onclick="emitSound('introduce_dancers.mp3')">Dancers</button>
-                <button class="btn btn-sound" onclick="emitSound('large_winning.mp3')">Giải thưởng lớn</button>
-                <button class="btn btn-sound" onclick="emitSound('main_theme.mp3')">Nhạc nền</button>
-                <button class="btn btn-sound" onclick="emitSound('Opening&Host_Entrance.mp3')">Mở đầu</button>
-                <button class="btn btn-sound" onclick="emitSound('round_1_bed.mp3')">Nhạc nền vòng 1</button>
-                <button class="btn btn-sound" onclick="emitSound('round_2_bed.mp3')">Nhạc nền vòng 2</button>
-                <button class="btn btn-sound" onclick="emitSound('value_increase.mp3')">Tăng điểm</button>
-                <button class="btn btn-sound" onclick="emitSound('commercial_in.mp3')">QC</button>
-                <button class="btn btn-sound" onclick="emitSound('commercial_out.mp3')">Hết QC</button>
-                <button class="btn btn-sound" onclick="emitSound('contestant_lost_leave.mp3')">Thua cuộc</button>
-                <button class="btn btn-sound" onclick="emitSound('reveal_amount.mp3')">Công bố số tiền</button>
-                <button class="btn btn-sound" onclick="emitSound('round_start.mp3')">Bắt đầu vòng thi</button>
-                <button class="btn btn-sound" onclick="emitSound('theme_short.mp3')">Nhạc nền ngắn</button>
-                <button class="btn btn-sound" onclick="emitSound('value_decrease.mp3')">Giảm điểm</button>
-                <button class="btn btn-sound" onclick="emitSound('welcome_contestant.mp3')">Chào đón người chơi</button>
-                <button class="btn btn-sound" onclick="emitSound('pass.mp3')">Hoàn thành câu</button>
-            </div>
-            <div class="controls-row">
-                <button class="btn btn-stop-sound" onclick="emitStopSound()">Dừng âm thanh</button>
-            </div>
+        <div id="view2TableContainer" class="view2-table-container" style="width: 100%; max-height: 70vh; overflow-y: auto; margin-top: 10px;">
+            <div style="text-align: center; padding: 30px; font-size: 18px; color: #aaa;">Bảng đã được đóng. Vui lòng bấm <b>VÒNG 1</b> hoặc <b>VÒNG 2</b> để xem câu hỏi.</div>
         </div>
     </div>
 
@@ -1010,10 +1043,170 @@
             sendUpdate();
         }
 
+        // --- XỬ LÝ SỰ KIỆN VÀ RENDER VIEW 2 (QUẢN LÝ ĐỀ THI) ---
+        let currentView2Round = 0; // 0: Đóng/Ẩn, 1: Vòng 1, 2: Vòng 2
+        let activeControllerView = 1; // 1: View 1, 2: View 2
+
+        function switchControllerView(viewNum) {
+            activeControllerView = viewNum;
+            const v1 = document.getElementById('view1Container');
+            const v2 = document.getElementById('view2Container');
+            const btn1 = document.getElementById('btnView1');
+            const btn2 = document.getElementById('btnView2');
+
+            if (viewNum === 1) {
+                if (v1) v1.style.display = 'flex';
+                if (v2) v2.style.display = 'none';
+                if (btn1) {
+                    btn1.style.background = '#39ff14';
+                    btn1.style.color = '#000';
+                    btn1.style.borderColor = '#39ff14';
+                }
+                if (btn2) {
+                    btn2.style.background = 'rgba(0,0,0,0.5)';
+                    btn2.style.color = '#00ffff';
+                    btn2.style.borderColor = '#00ffff';
+                }
+            } else {
+                if (v1) v1.style.display = 'none';
+                if (v2) v2.style.display = 'flex';
+                if (btn2) {
+                    btn2.style.background = '#00ffff';
+                    btn2.style.color = '#000';
+                    btn2.style.borderColor = '#00ffff';
+                }
+                if (btn1) {
+                    btn1.style.background = 'rgba(0,0,0,0.5)';
+                    btn1.style.color = '#39ff14';
+                    btn1.style.borderColor = '#39ff14';
+                }
+
+                renderView2Table();
+            }
+        }
+
+        function showView2Table(roundNum) {
+            currentView2Round = roundNum;
+            const btnR1 = document.getElementById('btnV2Round1');
+            const btnR2 = document.getElementById('btnV2Round2');
+
+            if (roundNum === 1) {
+                if (btnR1) { btnR1.style.boxShadow = '0 0 12px #00bfff'; btnR1.style.border = '2px solid #fff'; }
+                if (btnR2) { btnR2.style.boxShadow = 'none'; btnR2.style.border = 'none'; }
+            } else if (roundNum === 2) {
+                if (btnR2) { btnR2.style.boxShadow = '0 0 12px #ffcc00'; btnR2.style.border = '2px solid #fff'; }
+                if (btnR1) { btnR1.style.boxShadow = 'none'; btnR1.style.border = 'none'; }
+            }
+
+            renderView2Table();
+        }
+
+        function closeView2Table() {
+            currentView2Round = 0;
+            const btnR1 = document.getElementById('btnV2Round1');
+            const btnR2 = document.getElementById('btnV2Round2');
+            if (btnR1) { btnR1.style.boxShadow = 'none'; btnR1.style.border = 'none'; }
+            if (btnR2) { btnR2.style.boxShadow = 'none'; btnR2.style.border = 'none'; }
+
+            const container = document.getElementById('view2TableContainer');
+            if (container) {
+                container.innerHTML = `<div style="text-align: center; padding: 30px; font-size: 18px; color: #aaa;">Bảng đã được đóng. Vui lòng bấm <b>VÒNG 1</b> hoặc <b>VÒNG 2</b> để xem câu hỏi.</div>`;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderView2Table() {
+            const container = document.getElementById('view2TableContainer');
+            if (!container) return;
+
+            if (currentView2Round === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 30px; font-size: 18px; color: #aaa;">Bảng đã được đóng. Vui lòng bấm <b>VÒNG 1</b> hoặc <b>VÒNG 2</b> để xem câu hỏi.</div>`;
+                return;
+            }
+
+            const topicsData = (currentView2Round === 1) ? state.round1TopicsData : state.round2TopicsData;
+            const roundTitle = (currentView2Round === 1) ? "DANH SÁCH ĐỀ THI - VÒNG 1" : "DANH SÁCH ĐỀ THI - VÒNG 2";
+
+            if (!topicsData || topicsData.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px dashed #ff5555;">
+                        <h3 style="color: #ff5555; margin: 0 0 10px 0; font-size: 20px;">${roundTitle}</h3>
+                        <p style="color: #ddd; font-size: 16px; margin: 0;">Chưa có dữ liệu đề thi cho Vòng ${currentView2Round}.<br>Vui lòng chuyển sang <b>View 1</b> và bấm <b>NHẬP ĐỀ EXCEL</b> để tải đề thi.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div style="display: flex; flex-direction: column; gap: 20px;">`;
+            html += `<div style="text-align: center; font-size: 20px; color: #39ff14; font-weight: bold; margin-bottom: 5px;">${roundTitle} (Tổng số: ${topicsData.length} chủ đề)</div>`;
+
+            topicsData.forEach((topicObj, tIdx) => {
+                const topicName = topicObj.topic || `CHỦ ĐỀ ${tIdx + 1}`;
+                html += `
+                    <div style="background: rgba(0, 0, 64, 0.7); border: 1px solid #00ffff; border-radius: 8px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <div style="font-size: 18px; color: #39ff14; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid rgba(57, 255, 20, 0.4); padding-bottom: 6px; text-transform: uppercase;">
+                            CHỦ ĐỀ ${tIdx + 1}: ${escapeHtml(topicName)}
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                            <thead>
+                                <tr style="background: rgba(0, 255, 255, 0.15); color: #00ffff;">
+                                    <th style="border: 1px solid #444; padding: 8px 12px; width: 60px; text-align: center;">Câu</th>
+                                    <th style="border: 1px solid #444; padding: 8px 12px;">Nội dung câu hỏi</th>
+                                    <th style="border: 1px solid #444; padding: 8px 12px; width: 35%;">Đáp án / Giải thích</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                ['A', 'B', 'C'].forEach(choiceKey => {
+                    const qObj = topicObj[choiceKey] || { text: 'Chưa có', excelAnsRaw: 'Trống' };
+                    const rawText = qObj.text || '(Trống)';
+                    const parsed = parseMediaContent(rawText);
+                    const ansText = qObj.excelAnsRaw || (qObj.correct !== undefined ? (qObj.correct ? 'Đúng' : 'Sai') : '');
+
+                    let qContentHtml = escapeHtml(parsed.text || rawText);
+                    if (parsed.mediaType === 'image') {
+                        qContentHtml += `<div style="margin-top: 6px;"><img src="${parsed.mediaUrl}" style="max-height: 80px; max-width: 200px; border-radius: 4px; border: 1px solid #666;" /></div>`;
+                    } else if (parsed.mediaType === 'video') {
+                        qContentHtml += `<div style="margin-top: 6px;"><video src="${parsed.mediaUrl}" style="max-height: 80px; max-width: 200px; border-radius: 4px;" controls></video></div>`;
+                    }
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #333; background: rgba(255,255,255,0.02);">
+                            <td style="border: 1px solid #444; padding: 8px 12px; text-align: center; font-weight: bold; color: #ffcc00; font-size: 16px;">${choiceKey}</td>
+                            <td style="border: 1px solid #444; padding: 8px 12px; color: #ffffff; line-height: 1.4; word-break: break-word;">${qContentHtml}</td>
+                            <td style="border: 1px solid #444; padding: 8px 12px; color: #39ff14; font-weight: bold; line-height: 1.4; word-break: break-word;">${escapeHtml(ansText)}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
         async function sendUpdate() {
             renderMoneyGrid();
             renderSymbolsRow();
             updateUI();
+            if (activeControllerView === 2 && currentView2Round !== 0) {
+                renderView2Table();
+            }
             const encState = await encryptDataForServer(state);
             socket.emit('update-game-state', encState);
             if (state.lastAction !== '') {
@@ -1444,6 +1637,15 @@
             state.activeQuestion = null;
             state.displayClasses = ['hide-money', 'show-topic', 'show-choices'];
             state.lastAction = 'closeChoice';
+            sendUpdate();
+        }
+
+        function restoreChoice(choice) {
+            if (!state.usedChoices) {
+                state.usedChoices = { A: false, B: false, C: false };
+            }
+            state.usedChoices[choice] = false;
+            state.lastAction = 'restoreChoice';
             sendUpdate();
         }
 

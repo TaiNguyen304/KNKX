@@ -578,8 +578,8 @@
     <div class="main-title">BẢNG ĐIỀU KHIỂN (CONTROLLER) - KHẮC NHẬP KHẮC XUẤT</div>
 
     <div class="view-switcher" style="display: flex; gap: 15px; margin-bottom: 15px; justify-content: center;">
-        <button class="view-nav-btn" id="btnView1" onclick="switchControllerView(1)" style="padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #39ff14; background: #39ff14; color: #000; cursor: pointer; transition: all 0.2s ease;">VIEW 1: ĐIỀU KHIỂN GAME</button>
-        <button class="view-nav-btn" id="btnView2" onclick="switchControllerView(2)" style="padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #00ffff; background: rgba(0,0,0,0.5); color: #00ffff; cursor: pointer; transition: all 0.2s ease;">VIEW 2: QUẢN LÝ ĐỀ THI</button>
+        <button class="view-nav-btn" id="btnView1" onclick="switchControllerView(1)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #39ff14; background: #39ff14; color: #000; cursor: pointer; transition: all 0.2s ease;">VIEW 1: ĐIỀU KHIỂN GAME</button>
+        <button class="view-nav-btn" id="btnView2" onclick="switchControllerView(2)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 10px 24px; font-size: 17px; font-weight: bold; border-radius: 8px; border: 2px solid #00ffff; background: rgba(0,0,0,0.5); color: #00ffff; cursor: pointer; transition: all 0.2s ease;">VIEW 2: QUẢN LÝ ĐỀ THI</button>
     </div>
 
     <!-- VIEW 1: ĐIỀU KHIỂN GAME -->
@@ -743,9 +743,9 @@
     <div id="view2Container" style="display: none; width: 100%; max-width: 1400px; background: rgba(255, 255, 255, 0.08); padding: 20px; border-radius: 12px; border: 1px solid #444; flex-direction: column; align-items: center; gap: 15px; box-sizing: border-box;">
         <div style="font-size: 22px; color: #00ffff; font-weight: bold; text-shadow: 0 0 8px #00ffff;">QUẢN LÝ ĐỀ THI EXCEL</div>
         <div class="view2-controls-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-view2-round" id="btnV2Round1" onclick="showView2Table(1)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center;padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #00ffff; color: #000; transition: all 0.2s;">VÒNG 1</button>
-            <button class="btn btn-view2-round" id="btnV2Round2" onclick="showView2Table(2)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center;padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ffff00; color: #000; transition: all 0.2s;">VÒNG 2</button>
-            <button class="btn btn-view2-close" onclick="closeView2Table()" style="display: inline-flex; align-items: center; justify-content: center; text-align: center;padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ff0000; color: #fff; transition: all 0.2s;">ĐÓNG BẢNG</button>
+            <button class="btn btn-view2-round" id="btnV2Round1" onclick="showView2Table(1)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #00bfff; color: #000; transition: all 0.2s;">VÒNG 1</button>
+            <button class="btn btn-view2-round" id="btnV2Round2" onclick="showView2Table(2)" style="display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ffcc00; color: #000; transition: all 0.2s;">VÒNG 2</button>
+            <button class="btn btn-view2-close" onclick="closeView2Table()" style="display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 10px 25px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; background: #ff0055; color: #fff; transition: all 0.2s;">ĐÓNG BẢNG</button>
         </div>
         <div id="view2TableContainer" class="view2-table-container" style="width: 100%; max-height: 70vh; overflow-y: auto; margin-top: 10px;">
             <div style="text-align: center; padding: 30px; font-size: 18px; color: #aaa;">Bảng đã được đóng. Vui lòng bấm <b>VÒNG 1</b> hoặc <b>VÒNG 2</b> để xem câu hỏi.</div>
@@ -1911,22 +1911,15 @@
                                 excelAnsRaw: displayAnsStr
                             };
                         } else {
-                            // Vòng 2: Đáp án chính, Đáp án khác, Hình ảnh, Giải thích
-                            if (rawImg.startsWith('http')) {
+                            // Vòng 2: Chỉ nhận đáp án ở cột E (Đáp án CHÍNH), không lồng cột F và H vào
+                            if (rawImg && rawImg.startsWith('http')) {
                                 qText += ' ' + rawImg;
-                            } else if (rawAnsAlt.startsWith('http')) {
-                                qText += ' ' + rawAnsAlt;
-                                rawAnsAlt = '';
                             }
-
-                            let fullAns = rawAnsMain;
-                            if (rawAnsAlt) fullAns += ' / ' + rawAnsAlt;
-                            if (rawExplain) fullAns += ' (Giải thích: ' + rawExplain + ')';
 
                             currentTopicObj[choiceKey] = {
                                 text: qText,
                                 correct: true,
-                                excelAnsRaw: fullAns
+                                excelAnsRaw: rawAnsMain
                             };
                         }
                     }
